@@ -1,0 +1,26 @@
+import { NextRequest } from "next/server";
+import { requireAuth } from "@/lib/api-auth";
+import { storage } from "@/lib/storage";
+
+export async function GET(request: NextRequest) {
+  const authResult = await requireAuth(request);
+
+  if (authResult instanceof Response) {
+    return authResult;
+  }
+
+  try {
+    const userId = authResult.id;
+    const recipes = await storage.getSavedRecipes(userId);
+
+    // Mark all as favorited
+    recipes.forEach(recipe => {
+      recipe.isFavorited = true;
+    });
+
+    return Response.json(recipes);
+  } catch (error) {
+    console.error("Error fetching saved recipes:", error);
+    return Response.json({ error: "Failed to fetch saved recipes" }, { status: 500 });
+  }
+}
