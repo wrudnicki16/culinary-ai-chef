@@ -20,6 +20,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@auth/core": "^0.34.2",
     "@auth/drizzle-adapter": "^1.10.0",
     "@hookform/resolvers": "^5.2.2",
     "@neondatabase/serverless": "^1.0.1",
@@ -66,8 +67,11 @@
     "next-auth": "^4.24.11",
     "openai": "^5.20.3",
     "react": "19.1.0",
+    "react-day-picker": "^9.11.1",
     "react-dom": "19.1.0",
+    "react-error-boundary": "^6.0.0",
     "react-hook-form": "^7.62.0",
+    "react-resizable-panels": "^3.0.6",
     "recharts": "^3.2.1",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",

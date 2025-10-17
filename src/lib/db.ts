@@ -6,4 +6,5 @@ if (!process.env.DATABASE_URL) {
 }
 
 const sql = neon(process.env.DATABASE_URL);
+// @ts-expect-error - neon is not typed
 export const db = drizzle(sql);

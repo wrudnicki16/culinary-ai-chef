@@ -2,8 +2,10 @@ import React from 'react'
 import { render, RenderOptions } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SessionProvider } from 'next-auth/react'
+import type { Session } from 'next-auth'
 import { ThemeProvider } from '@/components/theme-provider'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { vi } from 'vitest'
 
 // Create a test query client
 const createTestQueryClient = () =>
@@ -35,7 +37,7 @@ export const mockSession = {
 // All providers wrapper
 interface AllProvidersProps {
   children: React.ReactNode
-  session?: any
+  session?: Session | null
   queryClient?: QueryClient
 }
 
@@ -61,7 +63,7 @@ export function AllProviders({
 const customRender = (
   ui: React.ReactElement,
   options?: Omit<RenderOptions, 'wrapper'> & {
-    session?: any
+    session?: Session | null
     queryClient?: QueryClient
   }
 ) => {
@@ -78,7 +80,7 @@ const customRender = (
 }
 
 // Mock fetch for API calls
-export const mockFetch = (data: any, ok = true, status = 200) => {
+export const mockFetch = (data: unknown, ok = true, status = 200) => {
   global.fetch = vi.fn(() =>
     Promise.resolve({
       ok,

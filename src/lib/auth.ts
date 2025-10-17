@@ -23,12 +23,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       user: {
         ...session.user,
         id: user.id,
-        roles: (user as any).roles || [],
+        roles: (user as { roles?: string[] }).roles || [],
+        firstName: (user as { firstName?: string | null }).firstName,
+        lastName: (user as { lastName?: string | null }).lastName,
+        profileImageUrl: (user as { profileImageUrl?: string | null }).profileImageUrl,
       },
     }),
     jwt: ({ token, user }) => {
       if (user) {
-        token.roles = (user as any).roles || [];
+        token.roles = (user as { roles?: string[] }).roles || [];
       }
       return token;
     },

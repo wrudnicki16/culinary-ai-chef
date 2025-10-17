@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1;
     const pageSize = searchParams.get('pageSize') ? parseInt(searchParams.get('pageSize')!) : 10;
 
-    const { recipes, total } = await storage.getAllRecipes({
+    const { recipes: initialRecipes, total } = await storage.getAllRecipes({
       filters,
       search,
       sort,
@@ -26,14 +26,17 @@ export async function GET(request: NextRequest) {
     // Check authentication and add favorite status
     const user = await getAuthenticatedUser(request);
 
+    let recipes = initialRecipes;
+
     if (user) {
       try {
         const favoriteRecipes = await storage.getSavedRecipes(user.id);
         const favoriteIds = favoriteRecipes.map(r => r.id);
 
-        recipes.forEach(recipe => {
-          recipe.isFavorited = favoriteIds.includes(recipe.id);
-        });
+        recipes = recipes.map(recipe => ({
+          ...recipe,
+          isFavorited: favoriteIds.includes(recipe.id)
+        }));
       } catch (error) {
         console.error("Error fetching favorites:", error);
         // Continue without favorite status

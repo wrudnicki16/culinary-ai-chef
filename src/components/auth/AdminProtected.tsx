@@ -33,7 +33,7 @@ export function AdminProtected({
   }
 
   // Show access denied for non-admin users
-  if (!session || session.user?.role !== requireRole) {
+  if (!session || !session.user?.roles?.includes(requireRole)) {
     return (
       fallback || (
         <Card>

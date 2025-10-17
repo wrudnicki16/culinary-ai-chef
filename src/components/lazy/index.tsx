@@ -45,12 +45,3 @@ export const LazyFeaturesSection = dynamic(
     )
   }
 );
-
-// Admin components (only load when needed)
-export const LazyAdminRecipeTable = dynamic(
-  () => import("@/components/admin/recipe-table").then(mod => ({ default: mod.RecipeTable })),
-  {
-    loading: () => <div className="p-6 animate-pulse"><div className="h-64 bg-gray-100 rounded" /></div>,
-    ssr: false
-  }
-);

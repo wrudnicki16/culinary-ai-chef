@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { expect, afterEach } from 'vitest'
+import { afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
 // Mock next/navigation
@@ -17,7 +17,7 @@ vi.mock('next/navigation', () => ({
 
 // Mock next/image
 vi.mock('next/image', () => ({
-  default: ({ src, alt, ...props }: any) => <img src={src} alt={alt} {...props} />,
+  default: ({ src, alt, ...props }: { src: string; alt: string;[key: string]: unknown }) => <img src={src} alt={alt} {...props} />,
 }))
 
 // Mock NextAuth

@@ -1,6 +1,5 @@
 import OpenAI from "openai";
 import { Ingredient, NutritionInfo } from "./types";
-import { and, or, eq, sql, desc, asc, like } from "drizzle-orm";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -13,7 +12,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
       input: text,
       encoding_format: "float",
     });
-    
+
     return response.data[0].embedding;
   } catch (error) {
     console.error("Error generating embedding:", error);
@@ -59,7 +58,11 @@ export async function validateRecipeSafety(recipe: {
       response_format: { type: "json_object" },
     });
 
-    const result = JSON.parse(response.choices[0].message.content) as {
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("No response content from OpenAI");
+    }
+    const result = JSON.parse(content) as {
       safe: boolean;
       issues: string[];
     };
@@ -129,7 +132,7 @@ export async function generateRecipe(prompt: string, dietaryFilters: string[] = 
     // Special handling for Indian + vegan combinations
     const hasIndianCuisine = dietaryFilters.some(f => f.toLowerCase() === 'indian');
     const hasVegan = dietaryFilters.some(f => f.toLowerCase() === 'vegan');
-    
+
     const indianVeganGuidance = (hasIndianCuisine && hasVegan) ? `
 SPECIAL GUIDANCE FOR VEGAN INDIAN CUISINE:
 - Use coconut oil or mustard oil instead of ghee
@@ -141,7 +144,7 @@ SPECIAL GUIDANCE FOR VEGAN INDIAN CUISINE:
 - For protein: lentils, chickpeas, black beans, kidney beans, tofu
 ` : '';
 
-    const filtersText = dietaryRequirements.length > 0 
+    const filtersText = dietaryRequirements.length > 0
       ? `CRITICAL DIETARY REQUIREMENTS - The recipe MUST strictly comply with ALL of these requirements:
 ${dietaryRequirements.map(req => `- ${req}`).join('\n')}
 
@@ -149,48 +152,48 @@ ${forbiddenIngredients.length > 0 ? `FORBIDDEN INGREDIENTS - These ingredients a
 
 ${indianVeganGuidance}
 
-VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient complies with ALL dietary requirements. Include ONLY the appropriate dietary tags in the dietaryTags array (e.g., if vegan filters are applied, the recipe must be tagged as "vegan", NOT "vegetarian").` 
+VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient complies with ALL dietary requirements. Include ONLY the appropriate dietary tags in the dietaryTags array (e.g., if vegan filters are applied, the recipe must be tagged as "vegan", NOT "vegetarian").`
       : "";
-    
+
     // Try with o3 (reasoning model) for complex dietary requirements
     let response;
     let recipeData;
-    
+
     // Define what constitutes complex dietary combinations that need o3
     const normalizedFilters = dietaryFilters.map(f => f.toLowerCase().replace(/[^a-z]/g, ''));
-    
+
     // Cuisines that work well with vegan diets naturally
     const veganFriendlyCuisines = [
-      'mediterranean', 'middle eastern', 'lebanese', 'thai', 'vietnamese', 
+      'mediterranean', 'middle eastern', 'lebanese', 'thai', 'vietnamese',
       'ethiopian', 'mexican', 'moroccan', 'chinese', 'japanese', 'korean'
     ];
-    
+
     // Check if vegan is combined with a cuisine that's NOT vegan-friendly
-    const hasChallengingVeganCuisine = hasVegan && normalizedFilters.some(filter => 
-      !veganFriendlyCuisines.includes(filter) && 
+    const hasChallengingVeganCuisine = hasVegan && normalizedFilters.some(filter =>
+      !veganFriendlyCuisines.includes(filter) &&
       // Check if it's a cuisine (not a dietary restriction)
       ['indian', 'italian', 'french', 'german', 'american', 'southern', 'british', 'russian', 'polish', 'scandinavian'].includes(filter)
     );
-    
+
     // Check for complex combinations:
     // 1. Any combination of 3+ filters
     // 2. Specific challenging combinations (high protein + vegan, keto + high protein, etc.)
     // 3. Individual complex filters that require careful reasoning
     // 4. Vegan + challenging cuisines (Indian, Italian, French, etc.)
-    const hasComplexFilters = 
+    const hasComplexFilters =
       dietaryFilters.length >= 3 || // 3+ filters always complex
       normalizedFilters.some(f => ['vegan', 'highprotein', 'lowoxalate'].includes(f)) || // Individual complex filters
       (normalizedFilters.includes('keto') && normalizedFilters.includes('highprotein')) || // Keto + high protein
       (normalizedFilters.includes('lowcarb') && normalizedFilters.includes('highprotein')) || // Low carb + high protein
       (normalizedFilters.includes('vegan') && normalizedFilters.includes('highprotein')) || // Vegan + high protein
       hasChallengingVeganCuisine; // Vegan + challenging cuisine
-    
+
     console.log(`Dietary filters received: ${JSON.stringify(dietaryFilters)}`);
     console.log(`Normalized filters: ${JSON.stringify(normalizedFilters)}`);
     console.log(`Has vegan: ${hasVegan}`);
     console.log(`Has challenging vegan cuisine: ${hasChallengingVeganCuisine}`);
     console.log(`Has complex filters: ${hasComplexFilters}`);
-    
+
     if (hasComplexFilters) {
       try {
         console.log("Using gpt-4o for complex dietary requirements (o3 requires org verification)...");
@@ -233,11 +236,16 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
           ],
           response_format: { type: "json_object" }
         });
-        
+
         // Use response_format for gpt-4o
-        recipeData = JSON.parse(response.choices[0].message.content);
+        const content = response.choices[0].message.content;
+        if (!content) {
+          throw new Error("No response content from OpenAI");
+        }
+        recipeData = JSON.parse(content);
       } catch (o1Error) {
-        console.warn("o3 failed, falling back to gpt-4o:", o1Error.message);
+        const errorMessage = o1Error instanceof Error ? o1Error.message : String(o1Error);
+        console.warn("o3 failed, falling back to gpt-4o:", errorMessage);
         // Fall back to GPT-4o
         response = await openai.chat.completions.create({
           model: "gpt-4o",
@@ -278,7 +286,11 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
           ],
           response_format: { type: "json_object" },
         });
-        recipeData = JSON.parse(response.choices[0].message.content);
+        const content = response.choices[0].message.content;
+        if (!content) {
+          throw new Error("No response content from OpenAI");
+        }
+        recipeData = JSON.parse(content);
       }
     } else {
       // Use regular GPT-4o for simpler requirements
@@ -321,29 +333,33 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
         ],
         response_format: { type: "json_object" },
       });
-      recipeData = JSON.parse(response.choices[0].message.content);
+      const content = response.choices[0].message.content;
+      if (!content) {
+        throw new Error("No response content from OpenAI");
+      }
+      recipeData = JSON.parse(content);
     }
-    
+
     // Validate dietary filter compliance with retry logic
     if (dietaryFilters.some(f => f.toLowerCase() === 'vegan')) {
       const veganViolations = [];
       const ingredientText = JSON.stringify(recipeData.ingredients).toLowerCase();
       const instructionText = JSON.stringify(recipeData.instructions).toLowerCase();
       const fullText = ingredientText + ' ' + instructionText;
-      
+
       // Check for common non-vegan ingredients
       const nonVeganIngredients = [
-        'yogurt', 'milk', 'cheese', 'butter', 'cream', 'egg', 'honey', 
-        'ghee', 'whey', 'casein', 'meat', 'chicken', 'beef', 'fish', 
+        'yogurt', 'milk', 'cheese', 'butter', 'cream', 'egg', 'honey',
+        'ghee', 'whey', 'casein', 'meat', 'chicken', 'beef', 'fish',
         'seafood', 'gelatin', 'dairy'
       ];
-      
+
       for (const ingredient of nonVeganIngredients) {
         // Create more precise patterns to avoid false positives
         const patterns = [
           new RegExp(`\\b${ingredient}\\b`, 'i'), // whole word boundary
         ];
-        
+
         // Skip if it's a plant-based version
         const plantBasedExceptions = [
           `coconut ${ingredient}`, `almond ${ingredient}`, `oat ${ingredient}`, `soy ${ingredient}`,
@@ -351,7 +367,7 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
           `rice ${ingredient}`, `pea ${ingredient}`, `${ingredient} substitute`, `plant-based ${ingredient}`,
           `non-dairy ${ingredient}`, `dairy-free ${ingredient}`
         ];
-        
+
         let hasViolation = false;
         for (const pattern of patterns) {
           if (pattern.test(fullText)) {
@@ -369,16 +385,16 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
             }
           }
         }
-        
+
         if (hasViolation) {
           veganViolations.push(ingredient);
         }
       }
-      
+
       // If vegan violations found, try one more time with stricter instructions
       if (veganViolations.length > 0) {
         console.log(`Vegan violations detected: ${veganViolations.join(', ')}. Retrying with stricter vegan instructions...`);
-        
+
         try {
           const ketoRequirement = dietaryFilters.includes('keto') ? `
 
@@ -437,21 +453,25 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
             ],
             response_format: { type: "json_object" },
           });
-          
-          recipeData = JSON.parse(response.choices[0].message.content);
-          
+
+          const retryContent = response.choices[0].message.content;
+          if (!retryContent) {
+            throw new Error("No response content from OpenAI");
+          }
+          recipeData = JSON.parse(retryContent);
+
           // Re-check for violations after retry
           const retryIngredientText = JSON.stringify(recipeData.ingredients || []).toLowerCase();
           const retryInstructionText = JSON.stringify(recipeData.instructions || []).toLowerCase();
           const retryFullText = retryIngredientText + ' ' + retryInstructionText;
-          
+
           const retryViolations = [];
           for (const ingredient of nonVeganIngredients) {
             // Create more precise patterns to avoid false positives
             const patterns = [
               new RegExp(`\\b${ingredient}\\b`, 'i'), // whole word boundary
             ];
-            
+
             // Skip if it's a plant-based version
             const plantBasedExceptions = [
               `coconut ${ingredient}`, `almond ${ingredient}`, `oat ${ingredient}`, `soy ${ingredient}`,
@@ -459,7 +479,7 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
               `rice ${ingredient}`, `pea ${ingredient}`, `${ingredient} substitute`, `plant-based ${ingredient}`,
               `non-dairy ${ingredient}`, `dairy-free ${ingredient}`
             ];
-            
+
             let hasViolation = false;
             for (const pattern of patterns) {
               if (pattern.test(retryFullText)) {
@@ -477,62 +497,63 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
                 }
               }
             }
-            
+
             if (hasViolation) {
               retryViolations.push(ingredient);
             }
           }
-          
+
           if (retryViolations.length > 0) {
             throw new Error(`Recipe still contains non-vegan ingredients after retry: ${retryViolations.join(', ')}.`);
           }
-          
+
         } catch (retryError) {
-          console.error("Vegan retry failed:", retryError.message);
+          const errorMessage = retryError instanceof Error ? retryError.message : String(retryError);
+          console.error("Vegan retry failed:", errorMessage);
           throw new Error(`Unable to generate compliant vegan recipe: ${veganViolations.join(', ')}`);
         }
       }
-      
+
       // Check dietary tags (ensure dietaryTags exists)
       const dietaryTags = recipeData.dietaryTags || [];
-      const hasVeganTag = dietaryTags.some(tag => tag.toLowerCase() === 'vegan');
-      const hasVegetarianTag = dietaryTags.some(tag => tag.toLowerCase() === 'vegetarian');
-      
+      const hasVeganTag = dietaryTags.some((tag: string) => tag.toLowerCase() === 'vegan');
+      const hasVegetarianTag = dietaryTags.some((tag: string) => tag.toLowerCase() === 'vegetarian');
+
       // Ensure vegan tag is included and vegetarian tag is removed if present
       if (!hasVeganTag) {
-        recipeData.dietaryTags = dietaryTags.filter(tag => tag.toLowerCase() !== 'vegetarian');
+        recipeData.dietaryTags = dietaryTags.filter((tag: string) => tag.toLowerCase() !== 'vegetarian');
         recipeData.dietaryTags.push('vegan');
       }
       if (hasVegetarianTag && hasVeganTag) {
-        recipeData.dietaryTags = dietaryTags.filter(tag => tag.toLowerCase() !== 'vegetarian');
+        recipeData.dietaryTags = dietaryTags.filter((tag: string) => tag.toLowerCase() !== 'vegetarian');
       }
     }
-    
+
     // Validate low oxalate compliance
     if (dietaryFilters.some(f => f.toLowerCase().replace(/[^a-z]/g, '') === 'lowoxalate')) {
       const lowOxalateViolations = [];
       const ingredientText = JSON.stringify(recipeData.ingredients).toLowerCase();
       const instructionText = JSON.stringify(recipeData.instructions).toLowerCase();
       const fullText = ingredientText + ' ' + instructionText;
-      
+
       // Check for high-oxalate ingredients
       const highOxalateIngredients = [
-        'spinach', 'beets', 'rhubarb', 'chocolate', 'cocoa powder', 'dark chocolate', 
+        'spinach', 'beets', 'rhubarb', 'chocolate', 'cocoa powder', 'dark chocolate',
         'sweet potato', 'almonds', 'cashews', 'peanuts', 'sesame seeds', 'tahini'
       ];
-      
+
       for (const ingredient of highOxalateIngredients) {
         if (fullText.includes(ingredient) && !fullText.includes(`${ingredient} substitute`) && !fullText.includes(`low-oxalate ${ingredient}`)) {
           lowOxalateViolations.push(ingredient);
         }
       }
-      
+
       if (lowOxalateViolations.length > 0) {
         console.log(`Low oxalate violations detected: ${lowOxalateViolations.join(', ')}`);
         // Note: Don't throw error, just warn - the AI is getting better at avoiding these
       }
     }
-    
+
     // Validate recipe data completeness
     if (!recipeData.title || !recipeData.description || !recipeData.ingredients || !recipeData.instructions) {
       throw new Error("Generated recipe is incomplete - missing required fields");
@@ -542,12 +563,12 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
     const safetyCheck = await validateRecipeSafety(recipeData);
     if (!safetyCheck.safe) {
       console.warn(`Recipe safety warning: ${safetyCheck.issues?.join(", ")}`);
-      
+
       // Instead of failing, adjust the recipe to address safety concerns
       if (safetyCheck.issues) {
         // Add warning to recipe description
         recipeData.description = `${recipeData.description} (Note: ${safetyCheck.issues[0]})`;
-        
+
         // Add allergen information to dietary tags if not present
         if (safetyCheck.issues.some(issue => issue.toLowerCase().includes('allergen'))) {
           const allergenTags = ['Contains Allergens'];
@@ -618,7 +639,7 @@ export async function analyzeRecipeNutrition(
 ): Promise<NutritionInfo> {
   try {
     console.log(`Analyzing nutrition for ${ingredients.length} ingredients, ${servings} servings`);
-    
+
     // First attempt with GPT model
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -701,16 +722,20 @@ export async function analyzeRecipeNutrition(
       response_format: { type: "json_object" },
     });
 
-    const nutritionData = JSON.parse(response.choices[0].message.content) as NutritionInfo;
-    
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("No response content from OpenAI");
+    }
+    const nutritionData = JSON.parse(content) as NutritionInfo;
+
     // Double-check the math for calorie calculation as a fail-safe
     const calculatedCalories = (nutritionData.protein * 4) + (nutritionData.carbs * 4) + (nutritionData.fat * 9);
     const calorieDiscrepancy = Math.abs(calculatedCalories - nutritionData.calories);
     const discrepancyPercentage = (calorieDiscrepancy / nutritionData.calories) * 100;
-    
+
     console.log(`Nutrition check: API calories=${nutritionData.calories}, Calculated=${calculatedCalories}`);
     console.log(`Discrepancy: ${calorieDiscrepancy} calories (${discrepancyPercentage.toFixed(1)}%)`);
-    
+
     // If there's a significant discrepancy (>10% difference), adjust the calories
     if (discrepancyPercentage > 10) {
       console.warn(`Nutrition calculation adjusted: Original calories: ${nutritionData.calories}, Calculated: ${calculatedCalories}`);
@@ -721,18 +746,18 @@ export async function analyzeRecipeNutrition(
     // This acts as a sanity check for extremely low calorie counts
     let hasProteinSource = false;
     let estimatedMinimumCalories = 0;
-    
+
     for (const ingredient of ingredients) {
       const name = ingredient.name.toLowerCase();
       const quantity = ingredient.quantity.toLowerCase();
-      
+
       // Check for common proteins and estimate minimum calories
-      if (name.includes('chicken') || name.includes('beef') || name.includes('pork') || 
-          name.includes('fish') || name.includes('tofu') || name.includes('shrimp') ||
-          name.includes('tuna') || name.includes('salmon')) {
-        
+      if (name.includes('chicken') || name.includes('beef') || name.includes('pork') ||
+        name.includes('fish') || name.includes('tofu') || name.includes('shrimp') ||
+        name.includes('tuna') || name.includes('salmon')) {
+
         hasProteinSource = true;
-        
+
         // Crude estimation based on quantity
         let grams = 0;
         if (quantity.includes('lb') || quantity.includes('pound')) {
@@ -753,17 +778,17 @@ export async function analyzeRecipeNutrition(
             grams = ounces * 28.35;
           }
         }
-        
+
         // Very conservative estimate of calories (100 cal per 100g of protein source)
         if (grams > 0) {
           estimatedMinimumCalories += (grams * 1); // 1 calorie per gram as absolute minimum
         }
       }
-      
+
       // Check for common carbs and add minimum calories
-      if (name.includes('rice') || name.includes('pasta') || name.includes('potato') || 
-          name.includes('bread') || name.includes('quinoa')) {
-        
+      if (name.includes('rice') || name.includes('pasta') || name.includes('potato') ||
+        name.includes('bread') || name.includes('quinoa')) {
+
         // Crude estimation based on quantity
         let grams = 0;
         if (quantity.includes('cup')) {
@@ -778,13 +803,13 @@ export async function analyzeRecipeNutrition(
             grams = parseFloat(match[0]);
           }
         }
-        
+
         // Very conservative estimate (100 cal per 100g of carbs)
         if (grams > 0) {
           estimatedMinimumCalories += (grams * 1); // 1 calorie per gram as absolute minimum
         }
       }
-      
+
       // Check for oils and fats
       if (name.includes('oil') || name.includes('butter') || name.includes('cream')) {
         let tbsp = 0;
@@ -797,17 +822,17 @@ export async function analyzeRecipeNutrition(
         }
       }
     }
-    
+
     // Apply minimum calories sanity check per serving
     const minimumPerServing = estimatedMinimumCalories / servings;
     console.log(`Minimum calorie sanity check: ${minimumPerServing} calories per serving`);
-    
+
     // If calculated calories are unreasonably low compared to our basic estimation
     if (hasProteinSource && nutritionData.calories < minimumPerServing && minimumPerServing > 100) {
       console.warn(`Calorie count suspiciously low. Minimum estimate: ${minimumPerServing}, API: ${nutritionData.calories}`);
       nutritionData.calories = Math.max(nutritionData.calories, Math.round(minimumPerServing));
     }
-    
+
     return nutritionData;
   } catch (error) {
     console.error("Nutrition analysis error:", error);
@@ -843,7 +868,8 @@ export async function generateChatResponse(userMessage: string, context: string 
       max_tokens: 300,
     });
 
-    return response.choices[0].message.content || "I'm sorry, I couldn't process your request.";
+    const content = response.choices[0].message.content;
+    return content || "I'm sorry, I couldn't process your request.";
   } catch (error) {
     console.error("Chat response error:", error);
     return "I'm experiencing some difficulty right now. Please try again later.";
@@ -851,22 +877,22 @@ export async function generateChatResponse(userMessage: string, context: string 
 }
 
 // RAG implementation for recipe research
-export async function researchRelatedRecipes(prompt: string, recipeEmbeddings: any[]): Promise<string> {
+export async function researchRelatedRecipes(prompt: string, recipeEmbeddings: Array<{ embedding: number[]; recipe: string }>): Promise<string> {
   try {
     // Generate embedding for the prompt
     const promptEmbedding = await generateEmbedding(prompt);
-    
+
     // Add context from existing recipes (simplified - in production you'd use vector DB and cosine similarity)
     let context = "Based on similar recipes in our database:\n";
-    
+
     if (recipeEmbeddings && recipeEmbeddings.length > 0) {
       for (const embedding of recipeEmbeddings.slice(0, 3)) {
-        context += `- ${embedding.content}\n`;
+        context += `- ${embedding.recipe}\n`;
       }
     } else {
       context += "No similar recipes found.\n";
     }
-    
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -883,7 +909,8 @@ export async function researchRelatedRecipes(prompt: string, recipeEmbeddings: a
       ],
     });
 
-    return response.choices[0].message.content || "";
+    const content = response.choices[0].message.content;
+    return content || "";
   } catch (error) {
     console.error("Recipe research error:", error);
     return "";

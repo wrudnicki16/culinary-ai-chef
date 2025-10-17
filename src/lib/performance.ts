@@ -3,7 +3,7 @@
 /**
  * Web Vitals reporter for monitoring performance
  */
-export function reportWebVitals(metric: any) {
+export function reportWebVitals(metric: {name: string; id: string; value: number}) {
   if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
     // Log to console in development, send to analytics in production
     console.log('Web Vitals:', metric);
@@ -93,7 +93,7 @@ export function monitorMemoryUsage() {
   }
 
   if ('memory' in performance) {
-    const memory = (performance as any).memory;
+    const memory = (performance as {memory: {usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number}}).memory;
     console.log('Memory Usage:', {
       used: Math.round(memory.usedJSHeapSize / 1048576) + 'MB',
       total: Math.round(memory.totalJSHeapSize / 1048576) + 'MB',
@@ -124,7 +124,7 @@ export function logPerformanceTiming(name: string) {
 /**
  * Debounce function for performance optimization
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: never[]) => unknown>(
   func: T,
   wait: number,
   immediate?: boolean
@@ -149,7 +149,7 @@ export function debounce<T extends (...args: any[]) => any>(
 /**
  * Throttle function for performance optimization
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: never[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {

@@ -7,10 +7,10 @@ import { Skeleton } from "./loading-skeleton";
 interface SuspenseWrapperProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
-  errorFallback?: React.ComponentType<any>;
+  errorFallback?: React.ComponentType<{error: Error; resetErrorBoundary: () => void}>;
 }
 
-function DefaultErrorFallback({ error, resetErrorBoundary }: any) {
+function DefaultErrorFallback({ error, resetErrorBoundary }: {error: Error; resetErrorBoundary: () => void}) {
   return (
     <div className="p-6 text-center">
       <h2 className="text-lg font-semibold text-red-600 mb-2">Something went wrong</h2>

@@ -1,6 +1,5 @@
 import { pgTable, serial, text, varchar, timestamp, jsonb, integer, boolean, index, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
 import type { AdapterAccount } from "@auth/core/adapters";
 
 // Auth.js required tables
@@ -69,12 +68,12 @@ export const recipes = pgTable("recipes", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   imageUrl: text("image_url"),
-  ingredients: jsonb("ingredients").notNull().$type<{name: string, quantity: string}[]>(),
+  ingredients: jsonb("ingredients").notNull().$type<{ name: string, quantity: string }[]>(),
   instructions: jsonb("instructions").notNull().$type<string[]>(),
   cookingTime: integer("cooking_time").notNull(),
   servings: integer("servings").notNull(),
   dietaryTags: jsonb("dietary_tags").notNull().$type<string[]>(),
-  nutritionInfo: jsonb("nutrition_info").notNull().$type<{calories: number, protein: number, fat: number, carbs: number}>(),
+  nutritionInfo: jsonb("nutrition_info").notNull().$type<{ calories: number, protein: number, fat: number, carbs: number }>(),
   rating: integer("rating").default(0).notNull(),
   ratingCount: integer("rating_count").default(0).notNull(),
   userId: text("user_id").notNull().references(() => users.id),
@@ -157,29 +156,29 @@ export const recipeEmbeddings = pgTable("recipe_embeddings", {
 
 // Define schemas for CRUD operations
 export const upsertUserSchema = createInsertSchema(users);
-export type UpsertUser = z.infer<typeof upsertUserSchema>;
+export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
 export const insertRecipeSchema = createInsertSchema(recipes).omit({ id: true });
-export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
+export type InsertRecipe = Omit<typeof recipes.$inferInsert, 'id'>;
 export type Recipe = typeof recipes.$inferSelect;
 
 export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true, updatedAt: true });
-export type InsertComment = z.infer<typeof insertCommentSchema>;
+export type InsertComment = Omit<typeof comments.$inferInsert, 'id' | 'createdAt' | 'updatedAt'>;
 export type Comment = typeof comments.$inferSelect;
 
 export const insertFavoriteSchema = createInsertSchema(favorites).omit({ id: true, createdAt: true });
-export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
+export type InsertFavorite = Omit<typeof favorites.$inferInsert, 'id' | 'createdAt'>;
 export type Favorite = typeof favorites.$inferSelect;
 
 export const insertGroceryItemSchema = createInsertSchema(groceryItems).omit({ id: true, createdAt: true });
-export type InsertGroceryItem = z.infer<typeof insertGroceryItemSchema>;
+export type InsertGroceryItem = Omit<typeof groceryItems.$inferInsert, 'id' | 'createdAt'>;
 export type GroceryItem = typeof groceryItems.$inferSelect;
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
-export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type InsertChatMessage = Omit<typeof chatMessages.$inferInsert, 'id' | 'createdAt'>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 
 export const insertRecipeEmbeddingSchema = createInsertSchema(recipeEmbeddings).omit({ id: true, createdAt: true });
-export type InsertRecipeEmbedding = z.infer<typeof insertRecipeEmbeddingSchema>;
+export type InsertRecipeEmbedding = Omit<typeof recipeEmbeddings.$inferInsert, 'id' | 'createdAt'>;
 export type RecipeEmbedding = typeof recipeEmbeddings.$inferSelect;

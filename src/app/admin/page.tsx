@@ -10,11 +10,20 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Users, BookOpen, Settings, ChevronRight, TrendingUp, MessageSquare, AlertTriangle, RefreshCw, LogIn } from "lucide-react";
 
+interface AdminStats {
+  userCount: number;
+  recipeCount: number;
+  activeUsersToday: number;
+  activeUsers: number;
+  generationCount: number;
+  recentActivity: Array<{id: string; type: string; description: string; timestamp: string}>;
+}
+
 export default function Admin() {
   const { data: session, status } = useSession();
-  const { data: stats, isLoading, error, refetch } = useQuery({
+  const { data: stats, isLoading, error, refetch } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
-    enabled: !!session && session.user?.role === 'admin',
+    enabled: !!session && (session.user as {role?: string})?.role === 'admin',
   });
 
   // Show loading state while checking authentication
@@ -36,7 +45,7 @@ export default function Admin() {
   }
 
   // Show access denied for non-admin users
-  if (!session || session.user?.role !== 'admin') {
+  if (!session || (session.user as {role?: string})?.role !== 'admin') {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Header />

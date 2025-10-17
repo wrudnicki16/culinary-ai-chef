@@ -30,7 +30,7 @@ export default function Dashboard() {
     enabled: activeTab === "generated",
   });
 
-  const { data: groceryList, isLoading: isLoadingGrocery } = useQuery<any[]>({
+  const { data: groceryList, isLoading: isLoadingGrocery } = useQuery<Array<{ name: string; quantity: string }>>({
     queryKey: ["/api/groceries"],
     enabled: activeTab === "grocery",
   });
@@ -78,40 +78,40 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-1">
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className={`w-full justify-start ${activeTab === "saved" ? "bg-primary/10 text-primary" : ""}`}
                     onClick={() => setActiveTab("saved")}
                   >
                     <Heart className="mr-2 h-4 w-4" />
                     Saved Recipes
                   </Button>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className={`w-full justify-start ${activeTab === "generated" ? "bg-primary/10 text-primary" : ""}`}
                     onClick={() => setActiveTab("generated")}
                   >
                     <History className="mr-2 h-4 w-4" />
                     Generated History
                   </Button>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className={`w-full justify-start ${activeTab === "grocery" ? "bg-primary/10 text-primary" : ""}`}
                     onClick={() => setActiveTab("grocery")}
                   >
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Grocery List
                   </Button>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className={`w-full justify-start ${activeTab === "profile" ? "bg-primary/10 text-primary" : ""}`}
                     onClick={() => setActiveTab("profile")}
                   >
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </Button>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className={`w-full justify-start ${activeTab === "settings" ? "bg-primary/10 text-primary" : ""}`}
                     onClick={() => setActiveTab("settings")}
                   >
@@ -132,13 +132,13 @@ export default function Dashboard() {
                   <TabsTrigger value="profile">Profile</TabsTrigger>
                   <TabsTrigger value="settings">Settings</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="saved">
                   <Card>
                     <CardHeader>
                       <CardTitle>Saved Recipes</CardTitle>
                       <CardDescription>
-                        Recipes you've bookmarked for future reference
+                        Recipes you&apos;ve bookmarked for future reference
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -163,7 +163,7 @@ export default function Dashboard() {
                           <Heart className="mx-auto h-12 w-12 text-gray-300" />
                           <h3 className="mt-4 text-lg font-medium">No saved recipes yet</h3>
                           <p className="mt-1 text-gray-500">
-                            When you save recipes, they'll appear here
+                            When you save recipes, they&apos;ll appear here
                           </p>
                           <Button className="mt-4" asChild>
                             <Link href="/">Browse Recipes</Link>
@@ -173,13 +173,13 @@ export default function Dashboard() {
                     </CardContent>
                   </Card>
                 </TabsContent>
-                
+
                 <TabsContent value="generated">
                   <Card>
                     <CardHeader>
                       <CardTitle>Generated Recipes</CardTitle>
                       <CardDescription>
-                        Recipes you've created using our AI generator
+                        Recipes you&apos;ve created using our AI generator
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -214,7 +214,7 @@ export default function Dashboard() {
                     </CardContent>
                   </Card>
                 </TabsContent>
-                
+
                 <TabsContent value="grocery">
                   <Card>
                     <CardHeader>
@@ -257,7 +257,7 @@ export default function Dashboard() {
                     </CardContent>
                   </Card>
                 </TabsContent>
-                
+
                 <TabsContent value="profile">
                   <Card>
                     <CardHeader>
@@ -273,19 +273,23 @@ export default function Dashboard() {
                           <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className="text-sm text-gray-500">First Name</label>
-                              <div className="mt-1 p-2 border rounded-md">{user?.firstName || "Not set"}</div>
+                              <div className="mt-1 p-2 border rounded-md">
+                                {user?.firstName || user?.name?.split(' ')[0] || "Not set"}
+                              </div>
                             </div>
                             <div>
                               <label className="text-sm text-gray-500">Last Name</label>
-                              <div className="mt-1 p-2 border rounded-md">{user?.lastName || "Not set"}</div>
+                              <div className="mt-1 p-2 border rounded-md">
+                                {user?.lastName || user?.name?.split(' ').slice(1).join(' ') || "Not set"}
+                              </div>
                             </div>
                             <div className="md:col-span-2">
                               <label className="text-sm text-gray-500">Email</label>
-                              <div className="mt-1 p-2 border rounded-md">{user?.email}</div>
+                              <div className="mt-1 p-2 border rounded-md">{user?.email || "Not set"}</div>
                             </div>
                           </div>
                         </div>
-                        
+
                         <div>
                           <h3 className="font-medium">Dietary Preferences</h3>
                           <p className="text-sm text-gray-500 mt-1 mb-2">
@@ -302,7 +306,7 @@ export default function Dashboard() {
                     </CardContent>
                   </Card>
                 </TabsContent>
-                
+
                 <TabsContent value="settings">
                   <Card>
                     <CardHeader>
@@ -326,7 +330,7 @@ export default function Dashboard() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div>
                           <h3 className="font-medium">Privacy Settings</h3>
                           <div className="mt-2 space-y-2">
@@ -340,7 +344,7 @@ export default function Dashboard() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div>
                           <h3 className="font-medium text-red-600">Danger Zone</h3>
                           <div className="mt-2">
@@ -357,7 +361,7 @@ export default function Dashboard() {
         </div>
       </main>
       <Footer />
-      
+
       <RecipeDetailModal
         recipe={selectedRecipe}
         open={isModalOpen}

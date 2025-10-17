@@ -32,7 +32,7 @@ export default function Landing() {
               </p>
               <div className="flex flex-wrap gap-4">
                 <Button size="lg" asChild className="bg-white text-primary hover:bg-white/90">
-                  <a href="/api/auth/signin">Get Started</a>
+                  <Link href="/api/auth/signin">Get Started</Link>
                 </Button>
                 <Button size="lg" variant="outline" className="border-white bg-white/20 text-white hover:bg-white/30" asChild>
                   <Link href="#features">Learn More</Link>
@@ -134,7 +134,7 @@ export default function Landing() {
               Join thousands of users who have transformed their cooking experience with AI-powered recipe recommendations.
             </p>
             <Button size="lg" asChild>
-              <a href="/api/auth/signin">Get Started For Free</a>
+              <Link href="/api/auth/signin">Get Started For Free</Link>
             </Button>
           </div>
         </section>

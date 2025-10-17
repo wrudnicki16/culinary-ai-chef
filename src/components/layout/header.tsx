@@ -59,7 +59,7 @@ export function Header() {
                       className="flex items-center p-0 space-x-1"
                     >
                       <img
-                        src={user?.profileImageUrl || "https://github.com/shadcn.png"}
+                        src={user?.profileImageUrl || user?.image || "https://github.com/shadcn.png"}
                         alt="User profile"
                         className="h-8 w-8 rounded-full object-cover"
                       />
@@ -89,7 +89,7 @@ export function Header() {
                     )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>
-                      <a href="/api/logout">Sign out</a>
+                      <Link href="/api/logout">Sign out</Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -98,7 +98,7 @@ export function Header() {
 
             {!isAuthenticated && pathname !== "/api/auth/signin" && (
               <Button asChild>
-                <a href="/api/auth/signin">Sign In</a>
+                <Link href="/api/auth/signin">Sign In</Link>
               </Button>
             )}
           </div>

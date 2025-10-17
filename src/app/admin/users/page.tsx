@@ -316,7 +316,7 @@ export default function AdminUsers() {
           <DialogHeader>
             <DialogTitle>Change User Role</DialogTitle>
             <DialogDescription>
-              Change the user's role and permission level.
+              Change the user&apos;s role and permission level.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">

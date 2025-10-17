@@ -8,7 +8,7 @@ import {
   RecipeEmbedding, InsertRecipeEmbedding
 } from "./schema";
 import { db } from "./db";
-import { eq, and, or, like, desc, asc, inArray, sql, not } from "drizzle-orm";
+import { eq, and, or, like, desc, asc, sql } from "drizzle-orm";
 import {
   users, recipes, comments, favorites,
   groceryItems, chatMessages, recipeEmbeddings
@@ -111,9 +111,6 @@ export class Storage implements IStorage {
   } = {}): Promise<{ recipes: Recipe[], total: number }> {
     const { filters, search, sort = 'newest', page = 1, pageSize = 10 } = options;
 
-    let query = db.select().from(recipes);
-    let countQuery = db.select({ count: sql`count(*)` }).from(recipes);
-
     const conditions = [];
 
     // Apply filters
@@ -133,8 +130,14 @@ export class Storage implements IStorage {
       );
     }
 
-    if (conditions.length > 0) {
-      const whereClause = and(...conditions);
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query: any = db.select().from(recipes);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let countQuery: any = db.select({ count: sql`count(*)` }).from(recipes);
+
+    if (whereClause) {
       query = query.where(whereClause);
       countQuery = countQuery.where(whereClause);
     }

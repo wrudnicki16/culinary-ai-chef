@@ -13,8 +13,8 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { Badge } from "@/components/ui/badge";
 import { DIETARY_FILTERS, detectContradictoryFilters } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Dialog, 
+import {
+  Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -31,11 +31,11 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
 } from "@/components/ui/tooltip";
 
 interface RecipeGeneratorProps {
@@ -75,13 +75,13 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
 
   // Calculate personalized protein intake based on weight and activity level
   const calculatePersonalizedProtein = (): string => {
-    const weightInKg = weightUnit === 'kg' 
+    const weightInKg = weightUnit === 'kg'
       ? parseFloat(userWeight)
       : parseFloat(userWeight) * 0.453592; // Convert lbs to kg
-    
+
     // Protein multiplier based on activity level (g per kg of body weight)
     let proteinMultiplier = 0.8; // Base recommendation
-    
+
     switch (activityLevel) {
       case 'sedentary':
         proteinMultiplier = 0.8;
@@ -98,7 +98,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
       default:
         proteinMultiplier = 1.2;
     }
-    
+
     return (weightInKg * proteinMultiplier).toFixed(0);
   };
 
@@ -107,7 +107,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
     if (filter === 'highProtein' && !selectedDietaryFilters.includes(filter)) {
       setShowProteinDialog(true);
     }
-    
+
     setSelectedDietaryFilters(prev =>
       prev.includes(filter)
         ? prev.filter(f => f !== filter)
@@ -126,7 +126,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
 
   const getFilterLabel = (filterId: string): string => {
     for (const category in DIETARY_FILTERS) {
-      const filter = DIETARY_FILTERS[category].find(f => f.id === filterId);
+      const filter = DIETARY_FILTERS[category as keyof typeof DIETARY_FILTERS].find(f => f.id === filterId);
       if (filter) return filter.label;
     }
     return filterId;
@@ -171,12 +171,12 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
       if (generatorTab === "lucky" && selectedMealType !== "any") {
         luckyPrompt = `Generate a random, creative ${selectedMealType} recipe that would surprise and delight me. Be inventive with ingredients and cooking techniques suitable for ${selectedMealType}.`;
       }
-      
+
       const allFilters = [...selectedDietaryFilters];
       if (selectedCuisine) {
         allFilters.push(selectedCuisine);
       }
-      
+
       const response = await apiRequest("POST", "/api/recipes/generate", {
         prompt: generatorTab === "prompt" ? prompt.trim() : luckyPrompt,
         dietaryFilters: allFilters
@@ -193,39 +193,39 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
       }
 
       const recipe = await response.json();
-      
+
       // Check if cancelled before processing the result
       if (isCancelled) {
         clearInterval(progressInterval);
         return;
       }
-      
+
       setGenerationProgress(100);
-      
+
       // Slight delay to show 100% completion
       setTimeout(() => {
         if (!isCancelled) {
           setIsGenerating(false);
           clearInterval(progressInterval);
-          
+
           // Invalidate recipe queries to refetch the list after generating a new one
           queryClient.invalidateQueries({ queryKey: ['/api/recipes'] });
-          
+
           // Pass the newly generated recipe up to the parent component
           onRecipeGenerated(recipe);
         }
       }, 500);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Clean up the interval and state
       clearInterval(progressInterval);
-      
+
       // Don't show error if user cancelled
       if (isCancelled) {
         return;
       }
-      
+
       setIsGenerating(false);
-      
+
       // Handle authentication errors
       if (isUnauthorizedError(error)) {
         toast({
@@ -238,7 +238,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
         }, 1500);
         return;
       }
-      
+
       toast({
         title: "Recipe generation failed",
         description: "There was an error generating your recipe. Please try again.",
@@ -252,7 +252,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
     setIsCancelled(true);
     setIsGenerating(false);
     setGenerationProgress(0);
-    
+
     toast({
       title: "Recipe generation cancelled",
       description: "Recipe generation was cancelled.",
@@ -263,17 +263,17 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
   // Handle protein dialog submission
   const handleProteinSubmit = () => {
     const proteinTarget = calculatePersonalizedProtein();
-    
+
     // Update the prompt with personalized protein information
     setPrompt(prev => {
       const proteinInfo = `I need a high-protein meal with approximately ${proteinTarget}g of protein. `;
-      // If the prompt already contains high-protein info, don't duplicate it
+      // If the prompt already contains high-protein info, don&apos;t duplicate it
       if (prev.toLowerCase().includes('high-protein') || prev.toLowerCase().includes('protein')) {
         return prev;
       }
       return proteinInfo + prev;
     });
-    
+
     setShowProteinDialog(false);
   };
 
@@ -362,8 +362,8 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
               <Label htmlFor="activity" className="text-right">
                 Activity
               </Label>
-              <Select value={activityLevel} onValueChange={setActivityLevel} className="col-span-3">
-                <SelectTrigger id="activity">
+              <Select value={activityLevel} onValueChange={setActivityLevel}>
+                <SelectTrigger id="activity" className="col-span-3">
                   <SelectValue placeholder="Select activity level" />
                 </SelectTrigger>
                 <SelectContent>
@@ -399,7 +399,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
               Challenging Filter Combination
             </DialogTitle>
             <DialogDescription>
-              We've detected some dietary filters that may be difficult to combine. Our AI will do its best to create a recipe that meets your requirements.
+              We&apos;ve detected some dietary filters that may be difficult to combine. Our AI will do its best to create a recipe that meets your requirements.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -415,13 +415,13 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
             </div>
           </div>
           <DialogFooter className="flex gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowConfirmationDialog(false)}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={async () => {
                 setShowConfirmationDialog(false);
                 await proceedWithGeneration();
@@ -433,7 +433,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       <Card className="mb-8">
         <CardHeader>
           <CardTitle className="text-lg flex justify-between items-center">
@@ -468,12 +468,12 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
               <TabsTrigger value="prompt">Custom Recipe</TabsTrigger>
               <TabsTrigger value="lucky">Feeling Lucky</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="prompt" className="space-y-4">
               {showFilters && (
                 <div className="mb-4 pb-4 border-b border-gray-200">
-                  <Tabs 
-                    defaultValue="dietType" 
+                  <Tabs
+                    defaultValue="dietType"
                     value={activeFilterTab}
                     onValueChange={setActiveFilterTab}
                     className="w-full"
@@ -495,8 +495,8 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
                                 <Badge
                                   key={filter.id}
                                   variant={selectedCuisine === filter.id ? "default" : "outline"}
-                                  className={selectedCuisine === filter.id 
-                                    ? "cursor-pointer bg-primary hover:bg-primary/80" 
+                                  className={selectedCuisine === filter.id
+                                    ? "cursor-pointer bg-primary hover:bg-primary/80"
                                     : "cursor-pointer hover:bg-gray-100"}
                                   onClick={() => handleCuisineSelection(filter.id)}
                                 >
@@ -523,8 +523,8 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
                               <Badge
                                 key={filter.id}
                                 variant={selectedDietaryFilters.includes(filter.id) ? "default" : "outline"}
-                                className={selectedDietaryFilters.includes(filter.id) 
-                                  ? "cursor-pointer bg-primary hover:bg-primary/80" 
+                                className={selectedDietaryFilters.includes(filter.id)
+                                  ? "cursor-pointer bg-primary hover:bg-primary/80"
                                   : "cursor-pointer hover:bg-gray-100"}
                                 onClick={() => toggleFilter(filter.id)}
                               >
@@ -538,7 +538,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
                   </Tabs>
                 </div>
               )}
-              
+
               <div>
                 <label
                   htmlFor="recipe-prompt"
@@ -554,7 +554,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
                   className="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary h-24"
                 />
               </div>
-              
+
               {(selectedDietaryFilters.length > 0 || selectedCuisine) && (
                 <div className="text-xs text-gray-500">
                   <span className="font-medium">Applied filters:</span> {[
@@ -563,7 +563,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
                   ].join(", ")}
                 </div>
               )}
-              
+
               <div className="text-right">
                 <Button
                   onClick={handleGenerateRecipe}
@@ -575,12 +575,12 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
                 </Button>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="lucky" className="space-y-4">
               {showFilters && (
                 <div className="mb-4 pb-4 border-b border-gray-200">
-                  <Tabs 
-                    defaultValue="dietType" 
+                  <Tabs
+                    defaultValue="dietType"
                     value={activeFilterTab}
                     onValueChange={setActiveFilterTab}
                     className="w-full"
@@ -602,8 +602,8 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
                                 <Badge
                                   key={filter.id}
                                   variant={selectedCuisine === filter.id ? "default" : "outline"}
-                                  className={selectedCuisine === filter.id 
-                                    ? "cursor-pointer bg-primary hover:bg-primary/80" 
+                                  className={selectedCuisine === filter.id
+                                    ? "cursor-pointer bg-primary hover:bg-primary/80"
                                     : "cursor-pointer hover:bg-gray-100"}
                                   onClick={() => handleCuisineSelection(filter.id)}
                                 >
@@ -630,8 +630,8 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
                               <Badge
                                 key={filter.id}
                                 variant={selectedDietaryFilters.includes(filter.id) ? "default" : "outline"}
-                                className={selectedDietaryFilters.includes(filter.id) 
-                                  ? "cursor-pointer bg-primary hover:bg-primary/80" 
+                                className={selectedDietaryFilters.includes(filter.id)
+                                  ? "cursor-pointer bg-primary hover:bg-primary/80"
                                   : "cursor-pointer hover:bg-gray-100"}
                                 onClick={() => toggleFilter(filter.id)}
                               >
@@ -645,7 +645,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
                   </Tabs>
                 </div>
               )}
-              
+
               <div className="py-6">
                 <div className="text-center mb-6">
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Ready for a culinary adventure?</h3>
@@ -653,11 +653,11 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
                     Let our AI surprise you with a creative, random recipe that might become your new favorite!
                   </p>
                 </div>
-                
+
                 <div className="mb-6">
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">What type of recipe would you like?</Label>
-                  <RadioGroup 
-                    value={selectedMealType} 
+                  <RadioGroup
+                    value={selectedMealType}
                     onValueChange={setSelectedMealType}
                     className="grid grid-cols-2 gap-4 sm:grid-cols-3"
                   >
@@ -687,7 +687,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
                     </div>
                   </RadioGroup>
                 </div>
-                
+
                 {(selectedDietaryFilters.length > 0 || selectedCuisine) && (
                   <div className="text-xs text-gray-500 mb-4 text-center">
                     <span className="font-medium">Applied filters:</span> {[
@@ -696,7 +696,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
                     ].join(", ")}
                   </div>
                 )}
-                
+
                 <div className="text-center">
                   <div className="relative inline-flex items-center">
                     <Button
@@ -707,7 +707,7 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
                       <div className="text-xl">🎲</div>
                       <span>Surprise Me!</span>
                     </Button>
-                    
+
                     {filterContradictions.hasContradictions && (
                       <TooltipProvider>
                         <Tooltip>

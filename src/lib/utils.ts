@@ -84,7 +84,7 @@ export const SAMPLE_RECIPE_IMAGES = [
   "https://images.unsplash.com/photo-1506368249639-73a05d6f6488",
 ];
 
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: never[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {

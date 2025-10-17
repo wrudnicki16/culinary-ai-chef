@@ -47,13 +47,13 @@ export async function requireRole(request: NextRequest, role: string) {
   }
 }
 
-export function validateRequestBody<T>(body: any, schema: any): T | Response {
+export function validateRequestBody<T>(body: unknown, schema: {parse: (data: unknown) => T}): T | Response {
   try {
     return schema.parse(body);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return Response.json({
       error: "Validation error",
-      details: error.errors || error.message
+      details: (error as {errors?: unknown; message?: string}).errors || (error as {message?: string}).message
     }, { status: 400 });
   }
 }

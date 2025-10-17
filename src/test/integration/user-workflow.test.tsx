@@ -8,15 +8,15 @@ import { useState } from 'react'
 
 // Real workflow component using actual components
 function RecipeWorkflow() {
-  const [generatedRecipe, setGeneratedRecipe] = useState<any>(null)
+  const [generatedRecipe, setGeneratedRecipe] = useState<{title: string; description: string} | null>(null)
   const [recipes, setRecipes] = useState([mockRecipe])
 
-  const handleRecipeGenerated = (recipe: any) => {
+  const handleRecipeGenerated = (recipe: {title: string; description: string}) => {
     setGeneratedRecipe(recipe)
     setRecipes(prev => [recipe, ...prev])
   }
 
-  const handleRecipeClick = (recipe: any) => {
+  const handleRecipeClick = (recipe: {title: string; description: string}) => {
     // Handle recipe detail view
     console.log('Recipe clicked:', recipe.title)
   }

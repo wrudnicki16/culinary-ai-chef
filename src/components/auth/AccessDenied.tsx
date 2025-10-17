@@ -11,7 +11,7 @@ interface AccessDeniedProps {
 
 export function AccessDenied({
   title = "Access Denied",
-  message = "You don't have permission to view this content.",
+  message = "You don&apos;t have permission to view this content.",
   showSignIn = true,
   showHome = true
 }: AccessDeniedProps) {

@@ -14,11 +14,12 @@ export async function GET(request: NextRequest) {
     const recipes = await storage.getSavedRecipes(userId);
 
     // Mark all as favorited
-    recipes.forEach(recipe => {
-      recipe.isFavorited = true;
-    });
+    const recipesWithFavorited = recipes.map(recipe => ({
+      ...recipe,
+      isFavorited: true
+    }));
 
-    return Response.json(recipes);
+    return Response.json(recipesWithFavorited);
   } catch (error) {
     console.error("Error fetching saved recipes:", error);
     return Response.json({ error: "Failed to fetch saved recipes" }, { status: 500 });
