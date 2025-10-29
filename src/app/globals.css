@@ -1,26 +1,134 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: 0 0% 100%;
+  --foreground: 20 14.3% 4.1%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 142 76% 36%;
+  --primary-foreground: 355 100% 100%;
+  --secondary: 24 83% 54%;
+  --secondary-foreground: 355 100% 100%;
+  --accent: 226 70% 55.5%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 142 76% 36%;
+  --radius: 0.5rem;
+  --star-empty: 210 16.7% 90.2%;
+  --star-filled: 24 96% 52%;
+
+  /* Chart colors */
+  --chart-1: 142 76% 36%;
+  --chart-2: 24 83% 54%;
+  --chart-3: 226 70% 55.5%;
+  --chart-4: 262 83% 58%;
+  --chart-5: 316 70% 50%;
+
+  /* Sidebar specific colors */
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 222.2 84% 4.9%;
+  --sidebar-primary: 142 76% 36%;
+  --sidebar-primary-foreground: 355 100% 100%;
+  --sidebar-accent: 210 40% 96.1%;
+  --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+  --sidebar-border: 214.3 31.8% 91.4%;
+  --sidebar-ring: 142 76% 36%;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --primary: 142 76% 44%;
+  --primary-foreground: 355 100% 100%;
+  --secondary: 24 96% 52%;
+  --secondary-foreground: 355 100% 100%;
+  --accent: 226 70% 65%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 142 76% 44%;
+  --radius: 0.5rem;
+  --star-empty: 240 3.7% 30%;
+  --star-filled: 24 96% 52%;
+
+  /* Chart colors */
+  --chart-1: 142 76% 44%;
+  --chart-2: 24 96% 52%;
+  --chart-3: 226 70% 65%;
+  --chart-4: 262 83% 68%;
+  --chart-5: 316 70% 60%;
+
+  /* Sidebar specific colors */
+  --sidebar-background: 240 10% 3.9%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-primary: 142 76% 44%;
+  --sidebar-primary-foreground: 355 100% 100%;
+  --sidebar-accent: 240 3.7% 15.9%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 240 3.7% 15.9%;
+  --sidebar-ring: 142 76% 44%;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+  }
+
+  .recipe-title {
+    @apply font-bold;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Star rating component */
+.star-rating {
+  @apply inline-flex items-center;
+}
+
+.star {
+  @apply text-[hsl(var(--star-empty))];
+}
+
+.star.filled {
+  @apply text-[hsl(var(--star-filled))];
+}
+
+/* Loading animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loader {
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid hsl(var(--primary));
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
 }
