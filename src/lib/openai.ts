@@ -138,14 +138,56 @@ export async function generateRecipe(prompt: string, dietaryFilters: string[] = 
     const hasVegan = dietaryFilters.some(f => f.toLowerCase() === 'vegan');
 
     const indianVeganGuidance = (hasIndianCuisine && hasVegan) ? `
-SPECIAL GUIDANCE FOR VEGAN INDIAN CUISINE:
-- Use coconut oil or mustard oil instead of ghee
-- Replace paneer with tofu, cashew cream, or firm tofu marinated in spices
-- Use coconut milk or cashew cream instead of heavy cream or yogurt
-- Traditional vegan Indian ingredients: dal (lentils), chickpeas, vegetables, coconut, spices
-- Popular vegan Indian dishes: chana masala, dal tadka, vegetable curry, aloo gobi, baingan bharta
-- Use traditional spices: turmeric, cumin, coriander, garam masala, mustard seeds
-- For protein: lentils, chickpeas, black beans, kidney beans, tofu
+CRITICAL: This MUST be an AUTHENTIC traditional Indian dish, not a Western dish with Indian spices.
+
+REQUIRED INDIAN AUTHENTICITY:
+✅ Use traditional Indian cooking techniques: tadka/tempering (heat oil, add whole spices until they crackle), bhuna (sautéing spices in oil), dum (slow cooking), roasting whole spices
+✅ Traditional spice combinations: garam masala, curry powder, panch phoron (Bengali), sambar powder (South Indian)
+✅ Regional cooking styles: North Indian (tomato-onion-cashew base), South Indian (coconut-tamarind base), East Indian (mustard oil and seeds)
+✅ Authentic garnishes: fresh coriander leaves, curry leaves, ginger julienne, lemon wedges, fried curry leaves
+✅ Traditional accompaniments: mention serving with basmati rice, roti, naan, paratha, or dosa
+✅ Indian names: Use Hindi/regional names (Chana Masala NOT "chickpea curry", Dal Tadka NOT "lentil soup")
+
+ESSENTIAL INGREDIENTS FOR VEGAN INDIAN:
+- Legumes: masoor dal (red lentils), moong dal (yellow lentils), toor dal (pigeon peas), chana dal, chickpeas, rajma (kidney beans)
+- Vegetables: bhindi (okra), baingan (eggplant), karela (bitter gourd), lauki (bottle gourd), curry leaves, green chilies
+- Bases: coconut milk for South Indian, cashew paste for North Indian, tomato-onion masala base
+- Tempering: mustard seeds (rai), cumin seeds (jeera), curry leaves, dried red chilies, asafoetida (hing)
+- Spices: turmeric (haldi), coriander powder (dhaniya), cumin powder, garam masala, kasuri methi (dried fenugreek leaves), amchur (mango powder)
+- Oils: mustard oil (East/North), coconut oil (South), sesame oil
+
+VEGAN SUBSTITUTIONS (Indian-appropriate):
+- NO ghee → Use coconut oil (South Indian style) or mustard oil (East/North Indian)
+- NO paneer → Use firm tofu pressed and marinated in turmeric and salt, OR cashew cream for gravies
+- NO cream/malai → Use coconut cream (South) or cashew cream (North) blended until smooth
+- NO yogurt/dahi → Use coconut yogurt or make cashew-based raita, add lemon juice for tang
+- NO butter/makkhan → Use vegan butter or coconut oil
+
+AUTHENTIC VEGAN INDIAN DISHES TO CONSIDER:
+- Dal Tadka, Dal Fry, Dal Makhani (with vegan butter), Sambar (South Indian dal)
+- Chana Masala, Chole, Punjabi Chole Bhature
+- Baingan Bharta (smoky mashed eggplant), Bhindi Masala (okra stir-fry)
+- Aloo Gobi (potato-cauliflower), Aloo Matar (potato-peas), Aloo Palak
+- Vegetable Biryani, Pulao, Tehri
+- South Indian: Avial, Kootu, Poriyal, Rasam, Sambhar
+- East Indian: Aloo Posto (potatoes in poppy seeds), Cholar Dal (Bengali split peas)
+- Gujarati: Undhiyu, Handvo
+
+AVOID THESE (Not authentically Indian):
+❌ "Indian-spiced" Western dishes (quinoa bowls, wraps, grain bowls with curry powder)
+❌ Fusion concepts ("Indian tacos", "curry pasta", "naan pizza")
+❌ Generic "curry" without regional specificity or proper name
+❌ Western vegetables with just garam masala added (brussels sprouts curry, kale curry)
+❌ Dishes that sound like Western food with Indian names ("Indian Buddha bowl")
+❌ Missing traditional cooking techniques (no tadka/tempering mentioned)
+
+COOKING TECHNIQUE REQUIREMENTS:
+1. Start with tadka/tempering: heat oil, add whole spices (mustard seeds, cumin, curry leaves), let them crackle and release aroma
+2. Build proper masala base: sauté onions until golden, add ginger-garlic paste, cook until raw smell disappears, add tomatoes and spices
+3. Use traditional cooking methods: slow simmering for dal, bhuna for masala, dum for biryani
+4. Finish with fresh garnishes: chopped coriander leaves, curry leaves, ginger julienne
+5. Specify proper consistency: mention if gravy should be thick/thin, or if dish is dry/semi-dry
+6. Regional accuracy: North Indian gravies are thicker with cream base, South Indian are thinner with coconut/tamarind
 ` : '';
 
     const filtersText = dietaryRequirements.length > 0
@@ -159,7 +201,7 @@ ${indianVeganGuidance}
 VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient complies with ALL dietary requirements. Include ONLY the appropriate dietary tags in the dietaryTags array (e.g., if vegan filters are applied, the recipe must be tagged as "vegan", NOT "vegetarian").`
       : "";
 
-    // Try with o3 (reasoning model) for complex dietary requirements
+    // Handle complex dietary requirements with the configured model
     let response;
     let recipeData;
 
@@ -235,7 +277,7 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
             },
             {
               role: "user",
-              content: `Create a recipe for: "${prompt}"`
+              content: `Create a recipe for: "${prompt}"${hasIndianCuisine && hasVegan ? '\n\nIMPORTANT: This MUST be an authentic traditional Indian dish with proper Indian cooking techniques (tadka/tempering, masala base). Use authentic Indian names (e.g., "Chana Masala" NOT "chickpea curry"). Include traditional spices and regional cooking methods. Avoid Western fusion or "Indian-inspired" dishes.' : ''}`
             }
           ],
           response_format: { type: "json_object" }
@@ -285,7 +327,7 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
             },
             {
               role: "user",
-              content: `${prompt}${hasIndianCuisine && hasVegan ? ' - this MUST be an authentic traditional Indian dish like dal, chana masala, aloo gobi, or baingan bharta' : ''}`,
+              content: `${prompt}${hasIndianCuisine && hasVegan ? '\n\nIMPORTANT: This MUST be an authentic traditional Indian dish with proper Indian cooking techniques (tadka/tempering, masala base). Use authentic Indian names (e.g., "Chana Masala" NOT "chickpea curry"). Include traditional spices and regional cooking methods. Avoid Western fusion or "Indian-inspired" dishes.' : ''}`,
             },
           ],
           response_format: { type: "json_object" },
@@ -332,7 +374,7 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
           },
           {
             role: "user",
-            content: `${prompt}${hasIndianCuisine && hasVegan ? ' - this MUST be an authentic traditional Indian dish like dal, chana masala, aloo gobi, or baingan bharta' : ''}`,
+            content: `${prompt}${hasIndianCuisine && hasVegan ? '\n\nIMPORTANT: This MUST be an authentic traditional Indian dish with proper Indian cooking techniques (tadka/tempering, masala base). Use authentic Indian names (e.g., "Chana Masala" NOT "chickpea curry"). Include traditional spices and regional cooking methods. Avoid Western fusion or "Indian-inspired" dishes.' : ''}`,
           },
         ],
         response_format: { type: "json_object" },
@@ -409,7 +451,7 @@ KETO REQUIREMENTS (if applicable):
 - Focus on leafy greens, cruciferous vegetables, plant proteins like tofu/tempeh
 - Target: 20-30g fat, 15-20g protein, 5-10g net carbs per serving` : '';
 
-          const strictVeganPrompt = `CRITICAL VEGAN REQUIREMENT: Create a 100% plant-based recipe for: "${prompt}"${hasIndianCuisine && hasVegan ? ' - this MUST be an authentic traditional Indian dish like Chana Masala, Aloo Gobi, Dal Tadka, or Baingan Bharta' : ''}
+          const strictVeganPrompt = `CRITICAL VEGAN REQUIREMENT: Create a 100% plant-based recipe for: "${prompt}"${hasIndianCuisine && hasVegan ? '\n\nAUTHENTICITY REQUIREMENT: This MUST be an authentic traditional Indian dish with proper Indian cooking techniques (tadka/tempering, bhuna, masala base building). Use authentic Indian dish names like "Chana Masala", "Dal Tadka", "Baingan Bharta", "Aloo Gobi" - NOT generic names like "chickpea curry" or "lentil soup". Include traditional Indian spices, regional cooking methods, and avoid Western fusion concepts.' : ''}
 
 ABSOLUTELY FORBIDDEN INGREDIENTS:
 - NO dairy products (milk, cheese, butter, cream, yogurt, ghee, whey, casein)
@@ -558,6 +600,49 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
       }
     }
 
+    // Validate Indian cuisine authenticity (when vegan + Indian)
+    if (hasIndianCuisine && hasVegan) {
+      const title = recipeData.title?.toLowerCase() || '';
+      const ingredients = JSON.stringify(recipeData.ingredients || []).toLowerCase();
+      const instructions = JSON.stringify(recipeData.instructions || []).toLowerCase();
+      const fullText = title + ' ' + ingredients + ' ' + instructions;
+
+      // Check for traditional Indian spices (should have at least 3)
+      const indianSpices = [
+        'turmeric', 'haldi', 'cumin', 'jeera', 'coriander', 'dhaniya',
+        'garam masala', 'curry leaves', 'mustard seeds', 'rai',
+        'asafoetida', 'hing', 'cardamom', 'cinnamon', 'cloves',
+        'fenugreek', 'kasuri methi', 'curry powder', 'sambar powder'
+      ];
+
+      const spicesFound = indianSpices.filter(spice => fullText.includes(spice));
+
+      // Check for Indian cooking techniques
+      const indianTechniques = ['tadka', 'tempering', 'temper', 'masala', 'bhuna', 'dum'];
+      const techniquesFound = indianTechniques.filter(technique => fullText.includes(technique));
+
+      // Warn if missing Indian authenticity markers
+      if (spicesFound.length < 3) {
+        console.warn(`⚠️ Indian authenticity warning: Only ${spicesFound.length} traditional Indian spices found. Expected at least 3.`);
+        console.warn(`Spices found: ${spicesFound.join(', ') || 'none'}`);
+      }
+
+      if (techniquesFound.length === 0) {
+        console.warn(`⚠️ Indian authenticity warning: No traditional Indian cooking techniques mentioned (tadka, tempering, masala, bhuna).`);
+      }
+
+      // Check for Western fusion anti-patterns
+      const fusionPatterns = ['bowl', 'wrap', 'buddha', 'quinoa', 'pasta', 'taco', 'pizza', 'fusion'];
+      const fusionFound = fusionPatterns.filter(pattern => title.includes(pattern));
+
+      if (fusionFound.length > 0) {
+        console.warn(`⚠️ Possible fusion/Western influence detected in title: ${fusionFound.join(', ')}`);
+      }
+
+      // Log authenticity check results
+      console.log(`✓ Indian authenticity check: ${spicesFound.length} spices, ${techniquesFound.length} techniques found`);
+    }
+
     // Validate recipe data completeness
     if (!recipeData.title || !recipeData.description || !recipeData.ingredients || !recipeData.instructions) {
       throw new Error("Generated recipe is incomplete - missing required fields");
@@ -584,9 +669,13 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
     // Generate an image for the recipe using the newly added function
     let imageUrl = null;
     try {
-      // Only generate image if title and description are present
-      if (recipeData.title && recipeData.description) {
-        const imageResult = await generateRecipeImage(recipeData.title, recipeData.description);
+      // Only generate image if title, description, and instructions are present
+      if (recipeData.title && recipeData.description && recipeData.instructions) {
+        const imageResult = await generateRecipeImage(
+          recipeData.title,
+          recipeData.description,
+          recipeData.instructions
+        );
         imageUrl = imageResult.url;
       }
     } catch (imageError) {
@@ -883,8 +972,8 @@ export async function generateChatResponse(userMessage: string, context: string 
 // RAG implementation for recipe research
 export async function researchRelatedRecipes(prompt: string, recipeEmbeddings: Array<{ embedding: number[]; recipe: string }>): Promise<string> {
   try {
-    // Generate embedding for the prompt
-    const promptEmbedding = await generateEmbedding(prompt);
+    // Generate embedding for the prompt (for future similarity search)
+    await generateEmbedding(prompt);
 
     // Add context from existing recipes (simplified - in production you'd use vector DB and cosine similarity)
     let context = "Based on similar recipes in our database:\n";
