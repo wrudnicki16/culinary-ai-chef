@@ -56,7 +56,7 @@ export function ChatWidget() {
         isUser: false,
         timestamp: new Date()
       }]);
-    } catch (error) {
+    } catch {
       toast({
         title: "Error sending message",
         description: "Please try again later",

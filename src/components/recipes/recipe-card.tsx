@@ -18,7 +18,6 @@ interface RecipeCardProps {
 }
 
 export function RecipeCard({ recipe, onClick, className }: RecipeCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
   const [isFavorite, setIsFavorite] = useState(recipe.isFavorited || false);
   const { toast } = useToast();
 
@@ -71,8 +70,6 @@ export function RecipeCard({ recipe, onClick, className }: RecipeCardProps) {
         className
       )}
       onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative h-48">
         <img

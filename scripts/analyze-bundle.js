@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 // Colors for console output
 const colors = {
@@ -111,11 +111,13 @@ function runWebpackAnalyzer() {
       const analyzerConfig = originalConfig.replace(
         'module.exports = nextConfig',
         `
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: process.env.ANALYZE === 'true',
-})
+import withBundleAnalyzer from '@next/bundle-analyzer';
 
-module.exports = withBundleAnalyzer(nextConfig)
+const analyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+export default analyzer(nextConfig);
         `
       );
 

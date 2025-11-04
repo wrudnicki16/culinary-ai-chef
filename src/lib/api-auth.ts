@@ -1,8 +1,7 @@
-import { NextRequest } from "next/server";
 import { auth } from "./auth";
 import { storage } from "./storage";
 
-export async function getAuthenticatedUser(request: NextRequest) {
+export async function getAuthenticatedUser() {
   const session = await auth();
 
   if (!session?.user) {
@@ -12,8 +11,8 @@ export async function getAuthenticatedUser(request: NextRequest) {
   return session.user;
 }
 
-export async function requireAuth(request: NextRequest) {
-  const user = await getAuthenticatedUser(request);
+export async function requireAuth() {
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -22,8 +21,8 @@ export async function requireAuth(request: NextRequest) {
   return user;
 }
 
-export async function requireRole(request: NextRequest, role: string) {
-  const user = await getAuthenticatedUser(request);
+export async function requireRole(role: string) {
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -47,13 +46,13 @@ export async function requireRole(request: NextRequest, role: string) {
   }
 }
 
-export function validateRequestBody<T>(body: unknown, schema: {parse: (data: unknown) => T}): T | Response {
+export function validateRequestBody<T>(body: unknown, schema: { parse: (data: unknown) => T }): T | Response {
   try {
     return schema.parse(body);
   } catch (error: unknown) {
     return Response.json({
       error: "Validation error",
-      details: (error as {errors?: unknown; message?: string}).errors || (error as {message?: string}).message
+      details: (error as { errors?: unknown; message?: string }).errors || (error as { message?: string }).message
     }, { status: 400 });
   }
 }

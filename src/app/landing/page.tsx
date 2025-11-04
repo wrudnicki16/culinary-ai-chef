@@ -2,15 +2,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { 
-  Filter, 
-  Heart, 
-  Search, 
-  Cpu, 
-  ShoppingCart, 
-  CheckCircle2, 
-  BadgeCheck, 
-  Sparkles 
+import {
+  Filter,
+  Heart,
+  Cpu,
+  ShoppingCart,
+  CheckCircle2,
+  BadgeCheck,
+  Sparkles
 } from "lucide-react";
 
 export default function Landing() {

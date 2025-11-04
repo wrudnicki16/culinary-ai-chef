@@ -1,14 +1,14 @@
 "use client"
 
 import { useState } from "react";
-import { 
-  CheckCircle, 
-  X, 
-  Star, 
-  Timer, 
-  Share2, 
+import {
+  CheckCircle,
+  X,
+  Star,
+  Timer,
+  Share2,
   Bookmark,
-  Heart, 
+  Heart,
   ShoppingCart,
   Utensils,
   UtensilsCrossed
@@ -19,7 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { Rating } from "@/components/ui/rating";
 import { Badge } from "@/components/ui/badge";
 import { Recipe, Comment } from "@/lib/types";
-import { cn, SAMPLE_RECIPE_IMAGES } from "@/lib/utils";
+import { SAMPLE_RECIPE_IMAGES } from "@/lib/utils";
 import { FormattedText } from "@/components/ui/formatted-text";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -58,7 +58,7 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
           description: "Ingredients have been added to your grocery list",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error adding to grocery list",
         description: "Failed to add ingredients. Please try again.",
@@ -92,7 +92,7 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
         queryClient.invalidateQueries({ queryKey: [`/api/recipes/${recipe.id}`] });
         queryClient.invalidateQueries({ queryKey: ['/api/recipes'] });
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error submitting comment",
         description: "Failed to submit your review. Please try again.",

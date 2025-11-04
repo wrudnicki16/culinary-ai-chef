@@ -59,7 +59,7 @@ const nextConfig = {
   },
 
   // Bundle analyzer (useful for production debugging)
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+  webpack: (config, { dev, isServer }) => {
     // Reduce bundle size
     if (!dev && !isServer) {
       config.optimization.splitChunks.chunks = 'all';

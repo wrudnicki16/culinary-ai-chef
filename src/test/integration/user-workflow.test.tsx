@@ -1,18 +1,16 @@
 import { render, screen, userEvent, waitFor } from '@/test/utils'
 import { useSession } from 'next-auth/react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { mockSession, mockRecipe, mockFetch } from '@/test/utils'
+import { mockSession, mockRecipe } from '@/test/utils'
 import { RecipeGenerator } from '@/components/recipes/recipe-generator'
 import { RecipeCard } from '@/components/recipes/recipe-card'
 import { useState } from 'react'
 
 // Real workflow component using actual components
 function RecipeWorkflow() {
-  const [generatedRecipe, setGeneratedRecipe] = useState<{title: string; description: string} | null>(null)
   const [recipes, setRecipes] = useState([mockRecipe])
 
   const handleRecipeGenerated = (recipe: {title: string; description: string}) => {
-    setGeneratedRecipe(recipe)
     setRecipes(prev => [recipe, ...prev])
   }
 

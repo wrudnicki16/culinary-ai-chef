@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Utensils, Filter, Info, AlertTriangle, X, LogIn } from "lucide-react";
+import { Utensils, Filter, AlertTriangle, X, LogIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { AILoadingModal } from "./ai-loading-modal";
@@ -43,7 +43,7 @@ interface RecipeGeneratorProps {
 }
 
 export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [prompt, setPrompt] = useState("");
   const [selectedDietaryFilters, setSelectedDietaryFilters] = useState<string[]>([]);
   const [selectedCuisine, setSelectedCuisine] = useState<string>('');
@@ -58,7 +58,6 @@ export function RecipeGenerator({ onRecipeGenerated }: RecipeGeneratorProps) {
   const [activityLevel, setActivityLevel] = useState<string>("moderate");
   const [generatorTab, setGeneratorTab] = useState("prompt");
   const [selectedMealType, setSelectedMealType] = useState("any");
-  const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [isCancelled, setIsCancelled] = useState(false);
   const [visibleCuisines, setVisibleCuisines] = useState(10);
   const { toast } = useToast();

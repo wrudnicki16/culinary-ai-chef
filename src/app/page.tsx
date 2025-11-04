@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
@@ -16,8 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { debounce } from "@/lib/utils";
 import { Recipe } from "@/lib/types";
 import { DIETARY_FILTERS } from "@/lib/utils";
-import { ChevronDown, Search, Sliders } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { ChevronDown, Sliders } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
