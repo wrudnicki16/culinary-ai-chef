@@ -1,14 +1,18 @@
 import OpenAI from "openai";
 import { Ingredient, NutritionInfo } from "./types";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+// Configure OpenAI models from environment variables
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-2024-11-20";
+const OPENAI_EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small";
+const OPENAI_IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || "dall-e-3";
+
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Function to generate recipe embeddings for RAG
 export async function generateEmbedding(text: string): Promise<number[]> {
   try {
     const response = await openai.embeddings.create({
-      model: "text-embedding-3-small",
+      model: OPENAI_EMBEDDING_MODEL,
       input: text,
       encoding_format: "float",
     });
@@ -30,7 +34,7 @@ export async function validateRecipeSafety(recipe: {
 }): Promise<{ safe: boolean; issues?: string[] }> {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: OPENAI_MODEL,
       messages: [
         {
           role: "system",
@@ -196,9 +200,9 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
 
     if (hasComplexFilters) {
       try {
-        console.log("Using gpt-4o for complex dietary requirements (o3 requires org verification)...");
+        console.log(`Using ${OPENAI_MODEL} for complex dietary requirements...`);
         response = await openai.chat.completions.create({
-          model: "gpt-4o",
+          model: OPENAI_MODEL,
           messages: [
             {
               role: "system",
@@ -243,12 +247,12 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
           throw new Error("No response content from OpenAI");
         }
         recipeData = JSON.parse(content);
-      } catch (o1Error) {
-        const errorMessage = o1Error instanceof Error ? o1Error.message : String(o1Error);
-        console.warn("o3 failed, falling back to gpt-4o:", errorMessage);
-        // Fall back to GPT-4o
+      } catch (retryError) {
+        const errorMessage = retryError instanceof Error ? retryError.message : String(retryError);
+        console.warn(`${OPENAI_MODEL} failed, retrying:`, errorMessage);
+        // Retry with the same model
         response = await openai.chat.completions.create({
-          model: "gpt-4o",
+          model: OPENAI_MODEL,
           messages: [
             {
               role: "system",
@@ -293,9 +297,9 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
         recipeData = JSON.parse(content);
       }
     } else {
-      // Use regular GPT-4o for simpler requirements
+      // Use configured model for simpler requirements
       response = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: OPENAI_MODEL,
         messages: [
           {
             role: "system",
@@ -437,7 +441,7 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
 }`;
 
           response = await openai.chat.completions.create({
-            model: "gpt-4o",
+            model: OPENAI_MODEL,
             messages: [
               {
                 role: "system",
@@ -614,7 +618,7 @@ export async function generateRecipeImage(
     photo-realistic and not illustrations. High-resolution, magazine-quality food photography.`;
 
     const response = await openai.images.generate({
-      model: "dall-e-3",
+      model: OPENAI_IMAGE_MODEL,
       prompt,
       n: 1,
       size: "1024x1024",
@@ -640,9 +644,9 @@ export async function analyzeRecipeNutrition(
   try {
     console.log(`Analyzing nutrition for ${ingredients.length} ingredients, ${servings} servings`);
 
-    // First attempt with GPT model
+    // First attempt with configured model
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: OPENAI_MODEL,
       messages: [
         {
           role: "system",
@@ -850,7 +854,7 @@ export async function analyzeRecipeNutrition(
 export async function generateChatResponse(userMessage: string, context: string = ""): Promise<string> {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: OPENAI_MODEL,
       messages: [
         {
           role: "system",
@@ -894,7 +898,7 @@ export async function researchRelatedRecipes(prompt: string, recipeEmbeddings: A
     }
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: OPENAI_MODEL,
       messages: [
         {
           role: "system",
