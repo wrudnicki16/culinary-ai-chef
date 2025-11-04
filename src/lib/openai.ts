@@ -693,18 +693,51 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
   }
 }
 
+// Helper to extract preparation style from instructions
+function extractPreparationStyle(instructions: string[]): string {
+  const allInstructions = instructions.join(' ').toLowerCase();
+
+  // Detect preparation method from cooking verbs
+  const preparationHints: { pattern: RegExp; hint: string }[] = [
+    { pattern: /mash|puree|blend|crush/i, hint: 'Show in mashed, pureed, or blended form with smooth, creamy texture.' },
+    { pattern: /layer|arrange|stack/i, hint: 'Show the layered presentation with visible distinct layers.' },
+    { pattern: /mix|toss|combine|stir together/i, hint: 'Show ingredients thoroughly mixed and combined in the dish.' },
+    { pattern: /simmer|stew|braise/i, hint: 'Show as a simmered dish with rich sauce or gravy coating the ingredients.' },
+    { pattern: /roast|bake/i, hint: 'Show the roasted/baked dish with golden-brown caramelization.' },
+    { pattern: /fry|sauté|pan.?fry/i, hint: 'Show the fried/sautéed dish with golden, crispy appearance.' },
+    { pattern: /grill|char|smoke/i, hint: 'Show grill marks or charred appearance.' },
+    { pattern: /stuff|fill/i, hint: 'Show the stuffed presentation with filling visible.' },
+  ];
+
+  for (const { pattern, hint } of preparationHints) {
+    if (pattern.test(allInstructions)) {
+      return hint;
+    }
+  }
+
+  return ''; // No specific style detected
+}
+
 // Function to generate an image for a recipe using DALL-E
 export async function generateRecipeImage(
   title: string,
-  description: string
+  description: string,
+  instructions: string[]
 ): Promise<{ url: string }> {
   try {
+    // Extract preparation style from recipe instructions
+    const prepStyle = extractPreparationStyle(instructions);
+
     // Create a more detailed prompt for realistic food photography
-    const prompt = `A professional, realistic food photography image of ${title}. 
-    ${description}. Close-up shot with soft natural lighting, shallow depth of field, 
-    photographed on a rustic wooden table with elegant tableware. Include fresh garnishes and 
-    ingredients in the background. Use warm, appetizing colors. Ensure all details are 
-    photo-realistic and not illustrations. High-resolution, magazine-quality food photography.`;
+    const prompt = `A professional, realistic food photography image of ${title}.
+    ${description}.
+    ${prepStyle}
+    IMPORTANT: Show the FINISHED, PLATED DISH as it would be served to a customer, not raw ingredients or cooking process.
+    Close-up shot with soft natural lighting, shallow depth of field,
+    photographed on a rustic wooden table with elegant tableware. Include fresh garnishes and
+    complementary ingredients in the background. Use warm, appetizing colors.
+    Ensure all details are photo-realistic and not illustrations.
+    High-resolution, magazine-quality food photography of the completed, ready-to-eat dish.`;
 
     const response = await openai.images.generate({
       model: OPENAI_IMAGE_MODEL,
