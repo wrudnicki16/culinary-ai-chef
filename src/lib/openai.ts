@@ -205,12 +205,12 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
     let response;
     let recipeData;
 
-    // Define what constitutes complex dietary combinations that need o3
+    // Define what constitutes complex dietary combinations
     const normalizedFilters = dietaryFilters.map(f => f.toLowerCase().replace(/[^a-z]/g, ''));
 
-    // Cuisines that work well with vegan diets naturally
+    // Cuisines that work well with vegan diets naturally (normalized - no spaces)
     const veganFriendlyCuisines = [
-      'mediterranean', 'middle eastern', 'lebanese', 'thai', 'vietnamese',
+      'mediterranean', 'middleeastern', 'lebanese', 'thai', 'vietnamese',
       'ethiopian', 'mexican', 'moroccan', 'chinese', 'japanese', 'korean'
     ];
 
