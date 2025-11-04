@@ -91,7 +91,7 @@ describe('Role-Based Access Control', () => {
   it('should support custom role requirements', () => {
     // Create a user with 'moderator' role
     const moderatorSession = {
-      user: { ...mockSession.user, role: 'moderator' },
+      user: { ...mockSession.user, role: 'moderator', roles: ['moderator'] },
       expires: mockSession.expires,
     }
 

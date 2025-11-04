@@ -1,6 +1,7 @@
 import { render, screen, userEvent } from '@/test/utils'
 import { useQuery } from '@tanstack/react-query'
 import { useSession } from 'next-auth/react'
+import { vi } from 'vitest'
 import AdminDashboard from '@/app/admin/page'
 import { mockAdminSession, mockSession, mockRecipes, mockFetch } from '@/test/utils'
 

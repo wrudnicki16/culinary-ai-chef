@@ -23,7 +23,7 @@ export default function Admin() {
   const { data: session, status } = useSession();
   const { data: stats, isLoading, error, refetch } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
-    enabled: !!session && (session.user as {role?: string})?.role === 'admin',
+    enabled: !!session && (session.user as {roles?: string[]})?.roles?.includes('admin'),
   });
 
   // Show loading state while checking authentication
@@ -45,7 +45,7 @@ export default function Admin() {
   }
 
   // Show access denied for non-admin users
-  if (!session || (session.user as {role?: string})?.role !== 'admin') {
+  if (!session || !(session.user as {roles?: string[]})?.roles?.includes('admin')) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Header />

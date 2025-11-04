@@ -141,7 +141,7 @@ export const mockAdminUser = {
   id: 'admin-user-id',
   name: 'Admin User',
   email: 'admin@example.com',
-  role: 'admin',
+  roles: ['admin'], // Add roles array for AdminProtected component
 }
 
 export const mockAdminSession = {
