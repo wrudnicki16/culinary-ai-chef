@@ -6,7 +6,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth();
+  const authResult = await requireAuth(request);
 
   if (authResult instanceof Response) {
     return authResult;
@@ -38,7 +38,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth();
+  const authResult = await requireAuth(request);
 
   if (authResult instanceof Response) {
     return authResult;

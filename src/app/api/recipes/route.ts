@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Check authentication and add favorite status
-    const user = await getAuthenticatedUser();
+    const user = await getAuthenticatedUser(request);
 
     let recipes = initialRecipes;
 

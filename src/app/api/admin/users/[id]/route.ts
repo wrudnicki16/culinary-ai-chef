@@ -6,7 +6,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireRole('admin');
+  const authResult = await requireRole(request, 'admin');
 
   if (authResult instanceof Response) {
     return authResult;

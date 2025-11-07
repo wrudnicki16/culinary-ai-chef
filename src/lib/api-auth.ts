@@ -1,6 +1,8 @@
 import { auth } from "./auth";
 import { storage } from "./storage";
-export async function getAuthenticatedUser() {
+import { NextRequest } from "next/server";
+
+export async function getAuthenticatedUser(request: NextRequest) {
   // In NextAuth v5 with App Router, auth() should be called without arguments in API routes
   // It automatically reads from the request context
   const session = await auth();
@@ -12,8 +14,8 @@ export async function getAuthenticatedUser() {
   return session.user;
 }
 
-export async function requireAuth() {
-  const user = await getAuthenticatedUser();
+export async function requireAuth(request: NextRequest) {
+  const user = await getAuthenticatedUser(request);
 
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -22,8 +24,8 @@ export async function requireAuth() {
   return user;
 }
 
-export async function requireRole(role: string) {
-  const user = await getAuthenticatedUser();
+export async function requireRole(request: NextRequest, role: string) {
+  const user = await getAuthenticatedUser(request);
 
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });

@@ -3,10 +3,10 @@ import { requireRole } from "@/lib/api-auth";
 import { storage } from "@/lib/storage";
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireRole('admin');
+  const authResult = await requireRole(request, 'admin');
 
   if (authResult instanceof Response) {
     return authResult;

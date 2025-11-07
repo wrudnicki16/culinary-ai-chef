@@ -6,7 +6,7 @@ import { recipeGenerationSchema } from "@/lib/types";
 import { InsertRecipe } from "@/lib/schema";
 
 export async function POST(request: NextRequest) {
-  const authResult = await requireAuth();
+  const authResult = await requireAuth(request);
 
   if (authResult instanceof Response) {
     return authResult;
