@@ -14,7 +14,7 @@ import {
   UtensilsCrossed
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Rating } from "@/components/ui/rating";
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +51,7 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
         recipeId: recipe.id,
         ingredients: recipe.ingredients.map(i => i.name)
       });
-      
+
       if (response.ok) {
         toast({
           title: "Added to grocery list",
@@ -69,25 +69,25 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
 
   const handleSubmitComment = async () => {
     if (!comment.trim() && !userRating) return;
-    
+
     setIsSubmittingComment(true);
-    
+
     try {
       const response = await apiRequest('POST', `/api/recipes/${recipe.id}/comments`, {
         comment: comment.trim(),
         rating: userRating
       });
-      
+
       if (response.ok) {
         toast({
           title: "Comment submitted",
           description: "Your review has been added successfully",
         });
-        
+
         setComment("");
         setUserRating(0);
         setShowCommentForm(false);
-        
+
         // Invalidate recipe queries to refresh data
         queryClient.invalidateQueries({ queryKey: [`/api/recipes/${recipe.id}`] });
         queryClient.invalidateQueries({ queryKey: ['/api/recipes'] });
@@ -102,10 +102,14 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
       setIsSubmittingComment(false);
     }
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden" onInteractOutside={(e) => e.preventDefault()}>
+        <DialogHeader className="sr-only">
+          <DialogTitle>{recipe.title}</DialogTitle>
+          <DialogDescription>Detailed information, ingredients, instructions, and reviews for {recipe.title}.</DialogDescription>
+        </DialogHeader>
         <Button
           variant="ghost"
           size="icon"
@@ -125,7 +129,7 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-6">
             <div className="flex items-center space-x-2 text-white">
               {recipe.dietaryTags.slice(0, 3).map(tag => (
-                <Badge 
+                <Badge
                   key={tag}
                   className="bg-primary text-white text-xs px-2 py-0.5 rounded-full"
                 >
@@ -218,8 +222,8 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
             <div className="mb-6">
               <div className="flex items-center mb-3">
                 <Rating value={recipe.rating} readOnly />
-                <Button 
-                  variant="link" 
+                <Button
+                  variant="link"
                   className="ml-4 text-sm text-primary font-medium"
                   onClick={() => setShowCommentForm(!showCommentForm)}
                 >
@@ -231,10 +235,10 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
                 <div className="bg-muted p-4 rounded-lg mb-4">
                   <div className="mb-3">
                     <label className="block text-sm font-medium mb-1">Your Rating</label>
-                    <Rating 
-                      value={userRating} 
-                      readOnly={false} 
-                      onChange={handleRatingChange} 
+                    <Rating
+                      value={userRating}
+                      readOnly={false}
+                      onChange={handleRatingChange}
                     />
                   </div>
                   <div className="mb-3">
@@ -248,13 +252,13 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
                     />
                   </div>
                   <div className="flex justify-end gap-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => setShowCommentForm(false)}
                     >
                       Cancel
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleSubmitComment}
                       disabled={isSubmittingComment}
                     >
@@ -307,7 +311,7 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
             </Button>
           </div>
           <div>
-            <Button 
+            <Button
               className="bg-primary hover:bg-primary/90 text-white"
               onClick={handleAddToGroceryList}
             >

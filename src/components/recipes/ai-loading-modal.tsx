@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 
@@ -24,6 +24,10 @@ export function AILoadingModal({ isOpen, progress, onCancel }: AILoadingModalPro
       }
     }}>
       <DialogContent className="bg-white p-8 rounded-xl shadow-xl max-w-md w-full text-center" onInteractOutside={(e) => e.preventDefault()}>
+        <DialogHeader className="sr-only">
+          <DialogTitle>Generating your recipe</DialogTitle>
+          <DialogDescription>Progress status while the AI prepares your custom recipe.</DialogDescription>
+        </DialogHeader>
         <div className="loader"></div>
         <h3 className="text-xl font-heading font-semibold mb-2">Generating Your Recipe</h3>
         <p className="text-gray-600 mb-4">
