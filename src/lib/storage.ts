@@ -49,6 +49,7 @@ export interface IStorage {
 
   // Chat operations
   getUserChatMessages(userId: string): Promise<ChatMessage[]>;
+  getAllChatMessages(): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
 
   // Recipe embedding operations
@@ -321,6 +322,12 @@ export class Storage implements IStorage {
       .where(eq(chatMessages.userId, userId))
       .orderBy(desc(chatMessages.createdAt))
       .limit(10);
+  }
+
+  async getAllChatMessages(): Promise<ChatMessage[]> {
+    return await db.select().from(chatMessages)
+      .orderBy(desc(chatMessages.createdAt))
+      .limit(100);
   }
 
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
