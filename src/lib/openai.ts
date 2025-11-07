@@ -748,7 +748,14 @@ export async function generateRecipeImage(
     });
 
     if (response.data && response.data.length > 0 && response.data[0].url) {
-      return { url: response.data[0].url };
+      const dalleImageUrl = response.data[0].url;
+
+      // Upload to Cloudinary for permanent storage
+      // This prevents the 403 errors when DALL-E's temporary URLs expire
+      const { uploadImageFromUrl } = await import('./cloudinary');
+      const permanentUrl = await uploadImageFromUrl(dalleImageUrl);
+
+      return { url: permanentUrl };
     } else {
       throw new Error("No image URL returned from DALL-E");
     }
