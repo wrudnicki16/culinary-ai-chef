@@ -99,8 +99,25 @@ export async function generateRecipe(prompt: string, dietaryFilters: string[] = 
         case 'vegetarian':
           return 'VEGETARIAN: No meat or fish, but dairy and eggs are allowed';
         case 'high protein':
-        case 'highprotein':
-          return 'HIGH PROTEIN: Recipe must contain at least 25g of protein per serving. For vegan recipes, use legumes (lentils, chickpeas, black beans), tofu, tempeh, seitan, hemp seeds, chia seeds, spirulina, or plant-based protein powder. For keto recipes, use high-protein, low-carb sources like chicken, fish, eggs, greek yogurt, cheese, or protein powder. NO animal proteins if vegan is also selected.';
+        case 'highprotein': {
+          const baseRequirement = 'HIGH PROTEIN: Recipe must contain at least 25g of protein per serving.';
+          const isVeganSelected = dietaryFilters.some(f => f.toLowerCase() === 'vegan');
+          const isKetoSelected = dietaryFilters.some(f => f.toLowerCase() === 'keto');
+
+          const veganRequirement = isVeganSelected
+            ? ' For vegan recipes, strictly use plant-based protein sources such as lentils, chickpeas, black beans, tofu, tempeh, seitan, hemp seeds, chia seeds, spirulina, or plant-based protein powder. Absolutely NO animal proteins.'
+            : '';
+
+          const ketoRequirement = isKetoSelected
+            ? ' For keto recipes, ensure the protein sources are high in protein but low in net carbs, such as chicken, fish, eggs, greek yogurt, cheese, or unsweetened protein powder. Maintain keto macros while hitting the protein goal.'
+            : '';
+
+          const generalRequirement = !isVeganSelected && !isKetoSelected
+            ? ' Use lean, high-quality protein sources (e.g., poultry, fish, legumes, tofu, or lean beef) and clearly state protein content.'
+            : '';
+
+          return `${baseRequirement}${veganRequirement}${ketoRequirement}${generalRequirement}`;
+        }
         case 'low oxalate':
         case 'lowoxalate':
           return 'LOW OXALATE: STRICTLY AVOID spinach, beets, rhubarb, nuts (if not nut-free), chocolate, and wheat. Use ONLY low-oxalate vegetables like cauliflower, cabbage, lettuce, cucumber, zucchini, carrots, bell peppers.';
@@ -208,6 +225,32 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
     // Define what constitutes complex dietary combinations
     const normalizedFilters = dietaryFilters.map(f => f.toLowerCase().replace(/[^a-z]/g, ''));
 
+    // Randomly select a protein category if no restrictive dietary filters are applied
+    const proteinRestrictiveFilters = ['vegan', 'vegetarian', 'pescatarian'];
+    const hasRestrictiveProteinFilter = dietaryFilters.some(f =>
+      proteinRestrictiveFilters.includes(f.toLowerCase())
+    );
+
+    let proteinInstruction = '';
+    if (!hasRestrictiveProteinFilter) {
+      const rand = Math.random(); // 0.0 to 1.0
+      let protein;
+
+      if (rand < 0.2) {
+        protein = 'poultry (such as chicken, turkey, or duck)';
+      } else if (rand < 0.4) {
+        protein = 'fish (such as salmon, cod, tuna, or halibut)';
+      } else if (rand < 0.6) {
+        protein = 'seafood (such as shrimp, scallops, crab, or mussels)';
+      } else if (rand < 0.8) {
+        protein = 'red meat (such as beef, lamb, or pork)';
+      } else {
+        protein = 'vegetarian proteins (such as eggs, cheese, tofu, beans, or lentils)';
+      }
+
+      proteinInstruction = `\n\nIMPORTANT: This recipe MUST prominently feature ${protein} as the main protein source.`;
+    }
+
     // Cuisines that work well with vegan diets naturally (normalized - no spaces)
     const veganFriendlyCuisines = [
       'mediterranean', 'middleeastern', 'lebanese', 'thai', 'vietnamese',
@@ -245,11 +288,14 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
         console.log(`Using ${OPENAI_MODEL} for complex dietary requirements...`);
         response = await openai.chat.completions.create({
           model: OPENAI_MODEL,
+          temperature: 1.2,
           messages: [
             {
               role: "system",
-              content: `You are a professional chef and nutritionist specializing in creating delicious, 
-              healthy recipes with accurate nutritional information. 
+              content: `You are a professional chef and nutritionist specializing in creating delicious recipes
+              with accurate nutritional information. Create diverse recipes that include a variety of
+              dietary approaches including meat, fish, poultry, and plant-based options unless specific
+              dietary restrictions are requested. 
               
               ${filtersText}
               
@@ -277,7 +323,7 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
             },
             {
               role: "user",
-              content: `Create a recipe for: "${prompt}"${hasIndianCuisine && hasVegan ? '\n\nIMPORTANT: This MUST be an authentic traditional Indian dish with proper Indian cooking techniques (tadka/tempering, masala base). Use authentic Indian names (e.g., "Chana Masala" NOT "chickpea curry"). Include traditional spices and regional cooking methods. Avoid Western fusion or "Indian-inspired" dishes.' : ''}`
+              content: `Create a recipe for: "${prompt}"${hasIndianCuisine && hasVegan ? '\n\nIMPORTANT: This MUST be an authentic traditional Indian dish with proper Indian cooking techniques (tadka/tempering, masala base). Use authentic Indian names (e.g., "Chana Masala" NOT "chickpea curry"). Include traditional spices and regional cooking methods. Avoid Western fusion or "Indian-inspired" dishes.' : ''}${proteinInstruction}`
             }
           ],
           response_format: { type: "json_object" }
@@ -295,11 +341,14 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
         // Retry with the same model
         response = await openai.chat.completions.create({
           model: OPENAI_MODEL,
+          temperature: 1.2,
           messages: [
             {
               role: "system",
-              content: `You are a professional chef and nutritionist specializing in creating delicious, 
-              healthy recipes with accurate nutritional information. 
+              content: `You are a professional chef and nutritionist specializing in creating delicious recipes
+              with accurate nutritional information. Create diverse recipes that include a variety of
+              dietary approaches including meat, fish, poultry, and plant-based options unless specific
+              dietary restrictions are requested. 
               
               ${filtersText}
               
@@ -327,7 +376,7 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
             },
             {
               role: "user",
-              content: `${prompt}${hasIndianCuisine && hasVegan ? '\n\nIMPORTANT: This MUST be an authentic traditional Indian dish with proper Indian cooking techniques (tadka/tempering, masala base). Use authentic Indian names (e.g., "Chana Masala" NOT "chickpea curry"). Include traditional spices and regional cooking methods. Avoid Western fusion or "Indian-inspired" dishes.' : ''}`,
+              content: `${prompt}${hasIndianCuisine && hasVegan ? '\n\nIMPORTANT: This MUST be an authentic traditional Indian dish with proper Indian cooking techniques (tadka/tempering, masala base). Use authentic Indian names (e.g., "Chana Masala" NOT "chickpea curry"). Include traditional spices and regional cooking methods. Avoid Western fusion or "Indian-inspired" dishes.' : ''}${proteinInstruction}`,
             },
           ],
           response_format: { type: "json_object" },
@@ -342,6 +391,7 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
       // Use configured model for simpler requirements
       response = await openai.chat.completions.create({
         model: OPENAI_MODEL,
+        temperature: 1.2,
         messages: [
           {
             role: "system",
@@ -374,7 +424,7 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
           },
           {
             role: "user",
-            content: `${prompt}${hasIndianCuisine && hasVegan ? '\n\nIMPORTANT: This MUST be an authentic traditional Indian dish with proper Indian cooking techniques (tadka/tempering, masala base). Use authentic Indian names (e.g., "Chana Masala" NOT "chickpea curry"). Include traditional spices and regional cooking methods. Avoid Western fusion or "Indian-inspired" dishes.' : ''}`,
+            content: `${prompt}${hasIndianCuisine && hasVegan ? '\n\nIMPORTANT: This MUST be an authentic traditional Indian dish with proper Indian cooking techniques (tadka/tempering, masala base). Use authentic Indian names (e.g., "Chana Masala" NOT "chickpea curry"). Include traditional spices and regional cooking methods. Avoid Western fusion or "Indian-inspired" dishes.' : ''}${proteinInstruction}`,
           },
         ],
         response_format: { type: "json_object" },
@@ -442,7 +492,27 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
         console.log(`Vegan violations detected: ${veganViolations.join(', ')}. Retrying with stricter vegan instructions...`);
 
         try {
-          const ketoRequirement = dietaryFilters.includes('keto') ? `
+          const veganForbiddenSection = `
+
+ABSOLUTELY FORBIDDEN INGREDIENTS:
+- NO dairy products (milk, cheese, butter, cream, yogurt, ghee, whey, casein)
+- NO animal products (meat, chicken, beef, fish, seafood, eggs)
+- NO honey (use maple syrup, agave, or date syrup instead)
+- NO gelatin (use agar-agar instead)`;
+
+          const veganRequiredSection = `
+
+REQUIRED: Use only plant-based ingredients like:
+- Plant milks (almond, oat, soy, coconut)
+- Plant-based proteins (tofu, tempeh, legumes, nuts, seeds)
+- Vegetables, fruits, grains, herbs, spices
+- Plant-based fats (olive oil, coconut oil, avocado)`;
+
+          const indianAuthenticityRequirement = hasIndianCuisine ? `
+
+AUTHENTICITY REQUIREMENT: This MUST be an authentic traditional Indian dish with proper Indian cooking techniques (tadka/tempering, bhuna, masala base building). Use authentic Indian dish names like "Chana Masala", "Dal Tadka", "Baingan Bharta", "Aloo Gobi" - NOT generic names like "chickpea curry" or "lentil soup". Include traditional Indian spices, regional cooking methods, and avoid Western fusion concepts.` : '';
+
+          const ketoRequirementSection = dietaryFilters.includes('keto') ? `
 
 KETO REQUIREMENTS (if applicable):
 - High fat (70-80% of calories), moderate protein (20-25%), very low carbs (5-10%)
@@ -451,21 +521,9 @@ KETO REQUIREMENTS (if applicable):
 - Focus on leafy greens, cruciferous vegetables, plant proteins like tofu/tempeh
 - Target: 20-30g fat, 15-20g protein, 5-10g net carbs per serving` : '';
 
-          const strictVeganPrompt = `CRITICAL VEGAN REQUIREMENT: Create a 100% plant-based recipe for: "${prompt}"${hasIndianCuisine && hasVegan ? '\n\nAUTHENTICITY REQUIREMENT: This MUST be an authentic traditional Indian dish with proper Indian cooking techniques (tadka/tempering, bhuna, masala base building). Use authentic Indian dish names like "Chana Masala", "Dal Tadka", "Baingan Bharta", "Aloo Gobi" - NOT generic names like "chickpea curry" or "lentil soup". Include traditional Indian spices, regional cooking methods, and avoid Western fusion concepts.' : ''}
+          const strictVeganPrompt = `CRITICAL VEGAN REQUIREMENT: Create a 100% plant-based recipe for: "${prompt}"${indianAuthenticityRequirement}${veganForbiddenSection}${veganRequiredSection}${ketoRequirementSection}
 
-ABSOLUTELY FORBIDDEN INGREDIENTS:
-- NO dairy products (milk, cheese, butter, cream, yogurt, ghee, whey, casein)
-- NO animal products (meat, chicken, beef, fish, seafood, eggs)
-- NO honey (use maple syrup, agave, or date syrup instead)
-- NO gelatin (use agar-agar instead)
-
-REQUIRED: Use only plant-based ingredients like:
-- Plant milks (almond, oat, soy, coconut)
-- Plant-based proteins (tofu, tempeh, legumes, nuts, seeds)
-- Vegetables, fruits, grains, herbs, spices
-- Plant-based fats (olive oil, coconut oil, avocado)${ketoRequirement}
-
-${indianVeganGuidance}
+${hasIndianCuisine && hasVegan ? indianVeganGuidance : ''}
 
 ${dietaryFilters.includes('highProtein') ? 'ENSURE high protein (25g+ per serving) using plant sources like tofu, tempeh, legumes, quinoa, hemp seeds.' : ''}
 ${dietaryFilters.includes('lowOxalate') ? 'AVOID high-oxalate foods: spinach, beets, chocolate, nuts, sweet potatoes. Use low-oxalate vegetables like cabbage, cauliflower, broccoli.' : ''}
