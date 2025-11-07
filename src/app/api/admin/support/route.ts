@@ -1,9 +1,8 @@
-import { NextRequest } from "next/server";
 import { requireRole } from "@/lib/api-auth";
 import { storage } from "@/lib/storage";
 
-export async function GET(request: NextRequest) {
-  const authResult = await requireRole(request, 'admin');
+export async function GET() {
+  const authResult = await requireRole('admin');
 
   if (authResult instanceof Response) {
     return authResult;

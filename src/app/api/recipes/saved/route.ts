@@ -1,9 +1,8 @@
-import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/api-auth";
 import { storage } from "@/lib/storage";
 
-export async function GET(request: NextRequest) {
-  const authResult = await requireAuth(request);
+export async function GET() {
+  const authResult = await requireAuth();
 
   if (authResult instanceof Response) {
     return authResult;

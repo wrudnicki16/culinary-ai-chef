@@ -3,8 +3,8 @@ import { requireAuth, validateRequestBody } from "@/lib/api-auth";
 import { storage } from "@/lib/storage";
 import { grocerySchema } from "@/lib/types";
 
-export async function GET(request: NextRequest) {
-  const authResult = await requireAuth(request);
+export async function GET() {
+  const authResult = await requireAuth();
 
   if (authResult instanceof Response) {
     return authResult;
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const authResult = await requireAuth(request);
+  const authResult = await requireAuth();
 
   if (authResult instanceof Response) {
     return authResult;

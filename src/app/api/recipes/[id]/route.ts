@@ -39,7 +39,7 @@ export async function GET(
 
     // Check if recipe is favorited by the current user
     let isFavorited = false;
-    const user = await getAuthenticatedUser(request);
+    const user = await getAuthenticatedUser();
 
     if (user) {
       try {

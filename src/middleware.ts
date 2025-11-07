@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 
-export default auth((req) => {
-  const { nextUrl, auth: session } = req;
+export async function middleware(req: NextRequest) {
+  const { nextUrl } = req;
 
-  // Check if the route is an admin route
+  // Only check auth for admin routes
   if (nextUrl.pathname.startsWith('/admin')) {
+    // Manually call auth() only for admin routes
+    const session = await auth();
+
     // If no session exists, redirect to sign-in
     if (!session) {
       const signInUrl = new URL('/api/auth/signin', nextUrl.origin);
@@ -25,7 +29,7 @@ export default auth((req) => {
   }
 
   return NextResponse.next();
-});
+}
 
 // Configure which routes to run middleware on
 export const config = {

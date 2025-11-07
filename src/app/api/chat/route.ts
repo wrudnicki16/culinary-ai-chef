@@ -5,7 +5,7 @@ import { generateChatResponse } from "@/lib/openai";
 import { chatMessageSchema } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
-  const authResult = await requireAuth(request);
+  const authResult = await requireAuth();
 
   if (authResult instanceof Response) {
     return authResult;

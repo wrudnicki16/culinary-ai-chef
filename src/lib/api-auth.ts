@@ -1,12 +1,9 @@
 import { auth } from "./auth";
 import { storage } from "./storage";
-import { NextRequest } from "next/server";
-
-export async function getAuthenticatedUser(request: NextRequest) {
-  // NextAuth v5's auth() function accepts Request objects in App Router
-  // Type error is suppressed because NextAuth v5 beta types don't fully support App Router Request types yet
-  // @ts-expect-error - NextAuth v5 beta has incomplete type definitions for App Router Request objects
-  const session = await auth(request);
+export async function getAuthenticatedUser() {
+  // In NextAuth v5 with App Router, auth() should be called without arguments in API routes
+  // It automatically reads from the request context
+  const session = await auth();
 
   if (!session?.user) {
     return null;
@@ -15,8 +12,8 @@ export async function getAuthenticatedUser(request: NextRequest) {
   return session.user;
 }
 
-export async function requireAuth(request: NextRequest) {
-  const user = await getAuthenticatedUser(request);
+export async function requireAuth() {
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -25,8 +22,8 @@ export async function requireAuth(request: NextRequest) {
   return user;
 }
 
-export async function requireRole(request: NextRequest, role: string) {
-  const user = await getAuthenticatedUser(request);
+export async function requireRole(role: string) {
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
