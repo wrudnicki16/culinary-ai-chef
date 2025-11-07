@@ -8,7 +8,7 @@ import {
   RecipeEmbedding, InsertRecipeEmbedding
 } from "./schema";
 import { db } from "./db";
-import { eq, and, or, like, desc, asc, sql } from "drizzle-orm";
+import { eq, and, or, ilike, desc, asc, sql } from "drizzle-orm";
 import {
   users, recipes, comments, favorites,
   groceryItems, chatMessages, recipeEmbeddings
@@ -125,8 +125,8 @@ export class Storage implements IStorage {
     if (search) {
       conditions.push(
         or(
-          like(recipes.title, `%${search}%`),
-          like(recipes.description, `%${search}%`)
+          ilike(recipes.title, `%${search}%`),
+          ilike(recipes.description, `%${search}%`)
         )
       );
     }
