@@ -17,8 +17,7 @@
     "analyze": "node scripts/analyze-bundle.js",
     "analyze:webpack": "node scripts/analyze-bundle.js --webpack",
     "db:push": "dotenv -e .env.local -- drizzle-kit push",
-    "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
-    "postinstall": "command -v patch-package >/dev/null 2>&1 && patch-package || echo 'patch-package not found; skipping'"
+    "db:studio": "dotenv -e .env.local -- drizzle-kit studio"
   },
   "dependencies": {
     "@auth/core": "^0.34.2",
