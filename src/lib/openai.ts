@@ -8,6 +8,13 @@ const OPENAI_IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || "dall-e-3";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+const openaiChat = process.env.BRAINTRUST_API_KEY
+  ? new OpenAI({
+      baseURL: "https://api.braintrust.dev/v1/proxy",
+      apiKey: process.env.BRAINTRUST_API_KEY,
+    })
+  : openai;
+
 // Function to generate recipe embeddings for RAG
 export async function generateEmbedding(text: string): Promise<number[]> {
   try {
@@ -33,7 +40,7 @@ export async function validateRecipeSafety(recipe: {
   dietaryTags: string[];
 }): Promise<{ safe: boolean; issues?: string[] }> {
   try {
-    const response = await openai.chat.completions.create({
+    const response = await openaiChat.chat.completions.create({
       model: OPENAI_MODEL,
       messages: [
         {
@@ -286,7 +293,7 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
     if (hasComplexFilters) {
       try {
         console.log(`Using ${OPENAI_MODEL} for complex dietary requirements...`);
-        response = await openai.chat.completions.create({
+        response = await openaiChat.chat.completions.create({
           model: OPENAI_MODEL,
           temperature: 1.2,
           messages: [
@@ -339,7 +346,7 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
         const errorMessage = retryError instanceof Error ? retryError.message : String(retryError);
         console.warn(`${OPENAI_MODEL} failed, retrying:`, errorMessage);
         // Retry with the same model
-        response = await openai.chat.completions.create({
+        response = await openaiChat.chat.completions.create({
           model: OPENAI_MODEL,
           temperature: 1.2,
           messages: [
@@ -389,7 +396,7 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
       }
     } else {
       // Use configured model for simpler requirements
-      response = await openai.chat.completions.create({
+      response = await openaiChat.chat.completions.create({
         model: OPENAI_MODEL,
         temperature: 1.2,
         messages: [
@@ -540,7 +547,7 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
   "nutritionInfo": {"calories": number, "protein": number, "fat": number, "carbs": number}
 }`;
 
-          response = await openai.chat.completions.create({
+          response = await openaiChat.chat.completions.create({
             model: OPENAI_MODEL,
             messages: [
               {
@@ -832,7 +839,7 @@ export async function analyzeRecipeNutrition(
     console.log(`Analyzing nutrition for ${ingredients.length} ingredients, ${servings} servings`);
 
     // First attempt with configured model
-    const response = await openai.chat.completions.create({
+    const response = await openaiChat.chat.completions.create({
       model: OPENAI_MODEL,
       messages: [
         {
@@ -1040,7 +1047,7 @@ export async function analyzeRecipeNutrition(
 // Function to handle chat support interactions
 export async function generateChatResponse(userMessage: string, context: string = ""): Promise<string> {
   try {
-    const response = await openai.chat.completions.create({
+    const response = await openaiChat.chat.completions.create({
       model: OPENAI_MODEL,
       messages: [
         {
@@ -1084,7 +1091,7 @@ export async function researchRelatedRecipes(prompt: string, recipeEmbeddings: A
       context += "No similar recipes found.\n";
     }
 
-    const response = await openai.chat.completions.create({
+    const response = await openaiChat.chat.completions.create({
       model: OPENAI_MODEL,
       messages: [
         {
