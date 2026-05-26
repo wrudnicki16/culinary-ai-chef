@@ -49,6 +49,33 @@ export async function uploadImageFromUrl(
   }
 }
 
+export async function uploadImageFromBase64(
+  base64Data: string,
+  options?: {
+    folder?: string;
+    publicId?: string;
+  }
+): Promise<string> {
+  if (!process.env.CLOUDINARY_CLOUD_NAME ||
+      !process.env.CLOUDINARY_API_KEY ||
+      !process.env.CLOUDINARY_API_SECRET) {
+    throw new Error('Cloudinary credentials are not configured.');
+  }
+
+  const result = await cloudinary.uploader.upload(
+    `data:image/png;base64,${base64Data}`,
+    {
+      folder: options?.folder || 'recipe-images',
+      public_id: options?.publicId,
+      resource_type: 'image',
+      overwrite: false,
+      unique_filename: true,
+    }
+  );
+
+  return result.secure_url;
+}
+
 /**
  * Delete an image from Cloudinary
  *

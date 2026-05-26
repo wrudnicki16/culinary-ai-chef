@@ -4,7 +4,7 @@ import { Ingredient, NutritionInfo } from "./types";
 // Configure OpenAI models from environment variables
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-2024-11-20";
 const OPENAI_EMBEDDING_MODEL = process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small";
-const OPENAI_IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || "dall-e-3";
+const OPENAI_IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -812,16 +812,18 @@ export async function generateRecipeImage(
       prompt,
       n: 1,
       size: "1024x1024",
-      quality: "standard",
+      quality: "medium",
     });
 
-    if (response.data && response.data.length > 0 && response.data[0].url) {
-      const dalleImageUrl = response.data[0].url;
+    if (response.data && response.data.length > 0 && (response.data[0].url || response.data[0].b64_json)) {
+      const { uploadImageFromUrl, uploadImageFromBase64 } = await import('./cloudinary');
+      let permanentUrl: string;
 
-      // Upload to Cloudinary for permanent storage
-      // This prevents the 403 errors when DALL-E's temporary URLs expire
-      const { uploadImageFromUrl } = await import('./cloudinary');
-      const permanentUrl = await uploadImageFromUrl(dalleImageUrl);
+      if (response.data[0].url) {
+        permanentUrl = await uploadImageFromUrl(response.data[0].url);
+      } else {
+        permanentUrl = await uploadImageFromBase64(response.data[0].b64_json!);
+      }
 
       return { url: permanentUrl };
     } else {
