@@ -8,10 +8,13 @@ const OPENAI_IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || "dall-e-3";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const openaiChat = process.env.BRAINTRUST_API_KEY
+const openaiChat = process.env.BRAINTRUST_API_KEY && process.env.BRAINTRUST_PROJECT_ID
   ? new OpenAI({
       baseURL: "https://api.braintrust.dev/v1/proxy",
       apiKey: process.env.BRAINTRUST_API_KEY,
+      defaultHeaders: {
+        "x-bt-parent": `project_id:${process.env.BRAINTRUST_PROJECT_ID}`,
+      },
     })
   : openai;
 
