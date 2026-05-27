@@ -34,6 +34,28 @@ function getRecipeClient(): { client: OpenAI; model: string } {
   return { client: openaiChat, model: OPENAI_MODEL };
 }
 
+function extractNumber(value: unknown): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const match = value.match(/[\d.]+/);
+    return match ? parseFloat(match[0]) : 0;
+  }
+  return 0;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function sanitizeRecipeData(data: any): any {
+  data.cookingTime = extractNumber(data.cookingTime);
+  data.servings = Math.max(1, Math.round(extractNumber(data.servings)));
+  if (data.nutritionInfo && typeof data.nutritionInfo === "object") {
+    data.nutritionInfo.calories = extractNumber(data.nutritionInfo.calories);
+    data.nutritionInfo.protein = extractNumber(data.nutritionInfo.protein);
+    data.nutritionInfo.fat = extractNumber(data.nutritionInfo.fat);
+    data.nutritionInfo.carbs = extractNumber(data.nutritionInfo.carbs);
+  }
+  return data;
+}
+
 // Function to generate recipe embeddings for RAG
 export async function generateEmbedding(text: string): Promise<number[]> {
   try {
@@ -366,7 +388,7 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
         if (!content) {
           throw new Error("No response content from OpenAI");
         }
-        recipeData = JSON.parse(content);
+        recipeData = sanitizeRecipeData(JSON.parse(content));
       } catch (retryError) {
         const errorMessage = retryError instanceof Error ? retryError.message : String(retryError);
         console.warn(`${recipeModel} failed, retrying:`, errorMessage);
@@ -417,7 +439,7 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
         if (!content) {
           throw new Error("No response content from OpenAI");
         }
-        recipeData = JSON.parse(content);
+        recipeData = sanitizeRecipeData(JSON.parse(content));
       }
     } else {
       // Use configured model for simpler requirements
@@ -465,7 +487,7 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
       if (!content) {
         throw new Error("No response content from OpenAI");
       }
-      recipeData = JSON.parse(content);
+      recipeData = sanitizeRecipeData(JSON.parse(content));
     }
 
     // Validate dietary filter compliance with retry logic
@@ -594,7 +616,7 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
           if (!retryContent) {
             throw new Error("No response content from OpenAI");
           }
-          recipeData = JSON.parse(retryContent);
+          recipeData = sanitizeRecipeData(JSON.parse(retryContent));
 
           // Re-check for violations after retry
           const retryIngredientText = JSON.stringify(recipeData.ingredients || []).toLowerCase();
@@ -795,7 +817,7 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
         });
         const content = fallbackResponse.choices[0].message.content;
         if (!content) throw new Error("No fallback response");
-        const recipeData = JSON.parse(content);
+        const recipeData = sanitizeRecipeData(JSON.parse(content));
         console.log("GPT-4o fallback succeeded");
         return { ...recipeData, imageUrl: null };
       } catch (fallbackError) {
