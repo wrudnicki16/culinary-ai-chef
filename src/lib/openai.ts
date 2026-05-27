@@ -18,6 +18,22 @@ const openaiChat = process.env.BRAINTRUST_API_KEY && process.env.BRAINTRUST_PROJ
     })
   : openai;
 
+const togetherAI = process.env.TOGETHER_API_KEY && process.env.TOGETHER_MODEL
+  ? new OpenAI({
+      baseURL: "https://api.together.xyz/v1",
+      apiKey: process.env.TOGETHER_API_KEY,
+    })
+  : null;
+
+const TOGETHER_MODEL = process.env.TOGETHER_MODEL || "";
+
+function getRecipeClient(): { client: OpenAI; model: string } {
+  if (togetherAI && TOGETHER_MODEL) {
+    return { client: togetherAI, model: TOGETHER_MODEL };
+  }
+  return { client: openaiChat, model: OPENAI_MODEL };
+}
+
 // Function to generate recipe embeddings for RAG
 export async function generateEmbedding(text: string): Promise<number[]> {
   try {
@@ -100,6 +116,12 @@ export async function generateRecipe(prompt: string, dietaryFilters: string[] = 
   dietaryTags: string[];
   nutritionInfo: NutritionInfo;
 }> {
+  const { client: recipeClient, model: recipeModel } = getRecipeClient();
+  const isUsingTogetherAI = recipeClient !== openaiChat;
+  if (isUsingTogetherAI) {
+    console.log(`Using Together AI model: ${recipeModel}`);
+  }
+
   try {
     // Create detailed dietary requirements with explicit restrictions
     const dietaryRequirements = dietaryFilters.map(filter => {
@@ -295,9 +317,9 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
 
     if (hasComplexFilters) {
       try {
-        console.log(`Using ${OPENAI_MODEL} for complex dietary requirements...`);
-        response = await openaiChat.chat.completions.create({
-          model: OPENAI_MODEL,
+        console.log(`Using ${recipeModel} for complex dietary requirements...`);
+        response = await recipeClient.chat.completions.create({
+          model: recipeModel,
           temperature: 1.2,
           messages: [
             {
@@ -347,10 +369,10 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
         recipeData = JSON.parse(content);
       } catch (retryError) {
         const errorMessage = retryError instanceof Error ? retryError.message : String(retryError);
-        console.warn(`${OPENAI_MODEL} failed, retrying:`, errorMessage);
+        console.warn(`${recipeModel} failed, retrying:`, errorMessage);
         // Retry with the same model
-        response = await openaiChat.chat.completions.create({
-          model: OPENAI_MODEL,
+        response = await recipeClient.chat.completions.create({
+          model: recipeModel,
           temperature: 1.2,
           messages: [
             {
@@ -399,8 +421,8 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
       }
     } else {
       // Use configured model for simpler requirements
-      response = await openaiChat.chat.completions.create({
-        model: OPENAI_MODEL,
+      response = await recipeClient.chat.completions.create({
+        model: recipeModel,
         temperature: 1.2,
         messages: [
           {
@@ -550,8 +572,8 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
   "nutritionInfo": {"calories": number, "protein": number, "fat": number, "carbs": number}
 }`;
 
-          response = await openaiChat.chat.completions.create({
-            model: OPENAI_MODEL,
+          response = await recipeClient.chat.completions.create({
+            model: recipeModel,
             messages: [
               {
                 role: "system",
@@ -756,6 +778,31 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
       imageUrl
     };
   } catch (error) {
+    if (isUsingTogetherAI) {
+      console.warn(`Together AI failed, falling back to GPT-4o:`, error instanceof Error ? error.message : String(error));
+      try {
+        const fallbackResponse = await openaiChat.chat.completions.create({
+          model: OPENAI_MODEL,
+          temperature: 1.2,
+          messages: [
+            {
+              role: "system",
+              content: `You are a professional chef and nutritionist. Generate a complete recipe as JSON: {"title","description","ingredients":[{"name","quantity"}],"instructions":[],"cookingTime","servings","dietaryTags":[],"nutritionInfo":{"calories","protein","fat","carbs"}}`,
+            },
+            { role: "user", content: prompt },
+          ],
+          response_format: { type: "json_object" },
+        });
+        const content = fallbackResponse.choices[0].message.content;
+        if (!content) throw new Error("No fallback response");
+        const recipeData = JSON.parse(content);
+        console.log("GPT-4o fallback succeeded");
+        return { ...recipeData, imageUrl: null };
+      } catch (fallbackError) {
+        console.error("GPT-4o fallback also failed:", fallbackError);
+        throw new Error("Failed to generate recipe");
+      }
+    }
     console.error("Recipe generation error:", error);
     throw new Error("Failed to generate recipe");
   }
@@ -840,12 +887,18 @@ export async function analyzeRecipeNutrition(
   ingredients: Ingredient[],
   servings: number = 4
 ): Promise<NutritionInfo> {
+  const { client: nutritionClient, model: nutritionModel } = getRecipeClient();
+  const isUsingTogetherAI = nutritionClient !== openaiChat;
+  if (isUsingTogetherAI) {
+    console.log(`Using Together AI for nutrition analysis: ${nutritionModel}`);
+  }
+
   try {
     console.log(`Analyzing nutrition for ${ingredients.length} ingredients, ${servings} servings`);
 
     // First attempt with configured model
-    const response = await openaiChat.chat.completions.create({
-      model: OPENAI_MODEL,
+    const response = await nutritionClient.chat.completions.create({
+      model: nutritionModel,
       messages: [
         {
           role: "system",
@@ -1038,14 +1091,34 @@ export async function analyzeRecipeNutrition(
 
     return nutritionData;
   } catch (error) {
-    console.error("Nutrition analysis error:", error);
-    // Return default values if analysis fails
-    return {
-      calories: 0,
-      protein: 0,
-      fat: 0,
-      carbs: 0,
-    };
+    if (isUsingTogetherAI) {
+      console.warn(`Together AI nutrition analysis failed, falling back to GPT-4o:`, error instanceof Error ? error.message : String(error));
+      try {
+        const fallbackResponse = await openaiChat.chat.completions.create({
+          model: OPENAI_MODEL,
+          messages: [
+            {
+              role: "system",
+              content: `You are a registered dietitian. Calculate per-serving nutrition for the given ingredients. Return JSON: {"calories":number,"protein":number,"fat":number,"carbs":number}`,
+            },
+            {
+              role: "user",
+              content: `Analyze nutrition for ${servings} servings: ${JSON.stringify(ingredients)}`,
+            },
+          ],
+          response_format: { type: "json_object" },
+        });
+        const content = fallbackResponse.choices[0].message.content;
+        if (!content) throw new Error("No fallback response");
+        console.log("GPT-4o nutrition fallback succeeded");
+        return JSON.parse(content) as NutritionInfo;
+      } catch (fallbackError) {
+        console.error("GPT-4o nutrition fallback also failed:", fallbackError);
+      }
+    } else {
+      console.error("Nutrition analysis error:", error);
+    }
+    return { calories: 0, protein: 0, fat: 0, carbs: 0 };
   }
 }
 
