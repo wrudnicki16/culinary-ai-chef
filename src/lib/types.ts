@@ -21,6 +21,7 @@ export interface NutritionInfo {
   protein: number;
   fat: number;
   carbs: number;
+  fiber?: number;
 }
 
 export interface Comment {

@@ -73,7 +73,7 @@ export const recipes = pgTable("recipes", {
   cookingTime: integer("cooking_time").notNull(),
   servings: integer("servings").notNull(),
   dietaryTags: jsonb("dietary_tags").notNull().$type<string[]>(),
-  nutritionInfo: jsonb("nutrition_info").notNull().$type<{ calories: number, protein: number, fat: number, carbs: number }>(),
+  nutritionInfo: jsonb("nutrition_info").notNull().$type<{ calories: number, protein: number, fat: number, carbs: number, fiber?: number }>(),
   rating: integer("rating").default(0).notNull(),
   ratingCount: integer("rating_count").default(0).notNull(),
   userId: text("user_id").notNull().references(() => users.id),
