@@ -113,6 +113,7 @@ export const mockRecipe = {
     protein: 5,
     fat: 2,
     carbs: 40,
+    fiber: 3,
   },
   rating: 4,
   ratingCount: 10,
