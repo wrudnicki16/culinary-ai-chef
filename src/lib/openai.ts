@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { Ingredient, NutritionInfo } from "./types";
+import { analyzeNutritionWithEdamam } from "./edamam";
 
 // Configure OpenAI models from environment variables
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-2024-11-20";
@@ -52,6 +53,9 @@ function sanitizeRecipeData(data: any): any {
     data.nutritionInfo.protein = extractNumber(data.nutritionInfo.protein);
     data.nutritionInfo.fat = extractNumber(data.nutritionInfo.fat);
     data.nutritionInfo.carbs = extractNumber(data.nutritionInfo.carbs);
+    if (data.nutritionInfo.fiber !== undefined) {
+      data.nutritionInfo.fiber = extractNumber(data.nutritionInfo.fiber);
+    }
   }
   return data;
 }
@@ -346,18 +350,18 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
           messages: [
             {
               role: "system",
-              content: `You are a professional chef and nutritionist specializing in creating delicious recipes
+              content: `You are a professional chef specializing in creating delicious recipes
               with accurate nutritional information. Create diverse recipes that include a variety of
               dietary approaches including meat, fish, poultry, and plant-based options unless specific
-              dietary restrictions are requested. 
-              
+              dietary restrictions are requested.
+
               ${filtersText}
-              
+
               Generate a complete recipe with clear instructions and accurate measurements.
               Ensure all dietary requirements are strictly followed and reflected in the dietaryTags.
-              
+
               IMPORTANT: Write instructions WITHOUT step numbers (like "1.", "2.", etc.) - the frontend will add numbering automatically.
-              
+
               Format your response as a JSON object with the following structure:
               {
                 "title": "Recipe title",
@@ -399,18 +403,18 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
           messages: [
             {
               role: "system",
-              content: `You are a professional chef and nutritionist specializing in creating delicious recipes
+              content: `You are a professional chef specializing in creating delicious recipes
               with accurate nutritional information. Create diverse recipes that include a variety of
               dietary approaches including meat, fish, poultry, and plant-based options unless specific
-              dietary restrictions are requested. 
-              
+              dietary restrictions are requested.
+
               ${filtersText}
-              
+
               Generate a complete recipe with clear instructions and accurate measurements.
               Ensure all dietary requirements are strictly followed and reflected in the dietaryTags.
-              
+
               IMPORTANT: Write instructions WITHOUT step numbers (like "1.", "2.", etc.) - the frontend will add numbering automatically.
-              
+
               Format your response as a JSON object with the following structure:
               {
                 "title": "Recipe title",
@@ -449,8 +453,8 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
         messages: [
           {
             role: "system",
-            content: `You are a professional chef and nutritionist specializing in creating delicious, 
-            healthy recipes with accurate nutritional information. 
+            content: `You are a professional chef specializing in creating delicious,
+            healthy recipes with accurate nutritional information.
             
             ${filtersText}
             
@@ -795,6 +799,15 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
       // Continue even if image generation fails
     }
 
+    // Replace LLM nutrition estimate with Edamam data when available
+    const edamamNutrition = await analyzeNutritionWithEdamam(
+      recipeData.ingredients,
+      recipeData.servings
+    );
+    if (edamamNutrition) {
+      recipeData.nutritionInfo = edamamNutrition;
+    }
+
     return {
       ...recipeData,
       imageUrl
@@ -809,7 +822,7 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
           messages: [
             {
               role: "system",
-              content: `You are a professional chef and nutritionist. Generate a complete recipe as JSON: {"title","description","ingredients":[{"name","quantity"}],"instructions":[],"cookingTime","servings","dietaryTags":[],"nutritionInfo":{"calories","protein","fat","carbs"}}`,
+              content: `You are a professional chef. Generate a complete recipe as JSON: {"title","description","ingredients":[{"name","quantity"}],"instructions":[],"cookingTime","servings","dietaryTags":[],"nutritionInfo":{"calories","protein","fat","carbs"}}`,
             },
             { role: "user", content: prompt },
           ],
@@ -819,6 +832,14 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
         if (!content) throw new Error("No fallback response");
         const recipeData = sanitizeRecipeData(JSON.parse(content));
         console.log("GPT-4o fallback succeeded");
+        // Replace LLM nutrition estimate with Edamam data when available
+        const edamamNutrition = await analyzeNutritionWithEdamam(
+          recipeData.ingredients,
+          recipeData.servings
+        );
+        if (edamamNutrition) {
+          recipeData.nutritionInfo = edamamNutrition;
+        }
         return { ...recipeData, imageUrl: null };
       } catch (fallbackError) {
         console.error("GPT-4o fallback also failed:", fallbackError);
@@ -909,6 +930,13 @@ export async function analyzeRecipeNutrition(
   ingredients: Ingredient[],
   servings: number = 4
 ): Promise<NutritionInfo> {
+  // Try Edamam first
+  const edamamResult = await analyzeNutritionWithEdamam(ingredients, servings);
+  if (edamamResult) {
+    return edamamResult;
+  }
+
+  // Fall back to LLM-based analysis
   const { client: nutritionClient, model: nutritionModel } = getRecipeClient();
   const isUsingTogetherAI = nutritionClient !== openaiChat;
   if (isUsingTogetherAI) {
@@ -1018,97 +1046,6 @@ export async function analyzeRecipeNutrition(
     if (discrepancyPercentage > 10) {
       console.warn(`Nutrition calculation adjusted: Original calories: ${nutritionData.calories}, Calculated: ${calculatedCalories}`);
       nutritionData.calories = Math.round(calculatedCalories);
-    }
-
-    // Final verification - do a basic calculation for common protein sources
-    // This acts as a sanity check for extremely low calorie counts
-    let hasProteinSource = false;
-    let estimatedMinimumCalories = 0;
-
-    for (const ingredient of ingredients) {
-      const name = ingredient.name.toLowerCase();
-      const quantity = ingredient.quantity.toLowerCase();
-
-      // Check for common proteins and estimate minimum calories
-      if (name.includes('chicken') || name.includes('beef') || name.includes('pork') ||
-        name.includes('fish') || name.includes('tofu') || name.includes('shrimp') ||
-        name.includes('tuna') || name.includes('salmon')) {
-
-        hasProteinSource = true;
-
-        // Crude estimation based on quantity
-        let grams = 0;
-        if (quantity.includes('lb') || quantity.includes('pound')) {
-          const match = quantity.match(/(\d+(\.\d+)?)/);
-          if (match) {
-            const pounds = parseFloat(match[0]);
-            grams = pounds * 454;
-          }
-        } else if (quantity.includes('g') || quantity.includes('gram')) {
-          const match = quantity.match(/(\d+(\.\d+)?)/);
-          if (match) {
-            grams = parseFloat(match[0]);
-          }
-        } else if (quantity.includes('oz') || quantity.includes('ounce')) {
-          const match = quantity.match(/(\d+(\.\d+)?)/);
-          if (match) {
-            const ounces = parseFloat(match[0]);
-            grams = ounces * 28.35;
-          }
-        }
-
-        // Very conservative estimate of calories (100 cal per 100g of protein source)
-        if (grams > 0) {
-          estimatedMinimumCalories += (grams * 1); // 1 calorie per gram as absolute minimum
-        }
-      }
-
-      // Check for common carbs and add minimum calories
-      if (name.includes('rice') || name.includes('pasta') || name.includes('potato') ||
-        name.includes('bread') || name.includes('quinoa')) {
-
-        // Crude estimation based on quantity
-        let grams = 0;
-        if (quantity.includes('cup')) {
-          const match = quantity.match(/(\d+(\.\d+)?)/);
-          if (match) {
-            const cups = parseFloat(match[0]);
-            grams = cups * 150; // Rough approximation for cooked grains
-          }
-        } else if (quantity.includes('g') || quantity.includes('gram')) {
-          const match = quantity.match(/(\d+(\.\d+)?)/);
-          if (match) {
-            grams = parseFloat(match[0]);
-          }
-        }
-
-        // Very conservative estimate (100 cal per 100g of carbs)
-        if (grams > 0) {
-          estimatedMinimumCalories += (grams * 1); // 1 calorie per gram as absolute minimum
-        }
-      }
-
-      // Check for oils and fats
-      if (name.includes('oil') || name.includes('butter') || name.includes('cream')) {
-        let tbsp = 0;
-        if (quantity.includes('tbsp') || quantity.includes('tablespoon')) {
-          const match = quantity.match(/(\d+(\.\d+)?)/);
-          if (match) {
-            tbsp = parseFloat(match[0]);
-            estimatedMinimumCalories += (tbsp * 100); // ~100 calories per tbsp of oil/fat
-          }
-        }
-      }
-    }
-
-    // Apply minimum calories sanity check per serving
-    const minimumPerServing = estimatedMinimumCalories / servings;
-    console.log(`Minimum calorie sanity check: ${minimumPerServing} calories per serving`);
-
-    // If calculated calories are unreasonably low compared to our basic estimation
-    if (hasProteinSource && nutritionData.calories < minimumPerServing && minimumPerServing > 100) {
-      console.warn(`Calorie count suspiciously low. Minimum estimate: ${minimumPerServing}, API: ${nutritionData.calories}`);
-      nutritionData.calories = Math.max(nutritionData.calories, Math.round(minimumPerServing));
     }
 
     return nutritionData;
