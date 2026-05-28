@@ -56,8 +56,6 @@ export async function analyzeNutritionWithEdamam(
       }
     }
 
-    console.log(`[Edamam] Totals: ${Math.round(totalCalories)} cal, ${Math.round(totalProtein)}g protein, ${Math.round(totalFat)}g fat, ${Math.round(totalCarbs)}g carbs, ${Math.round(totalFiber)}g fiber`);
-
     return {
       calories: Math.round(totalCalories / servings),
       protein: Math.round(totalProtein / servings),
