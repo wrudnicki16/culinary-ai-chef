@@ -1,15 +1,25 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // We'll mock global fetch; env vars are controlled per test
+const makeNutrients = (cal: number, protein: number, fat: number, carbs: number, fiber: number) => ({
+  ENERC_KCAL: { label: 'Energy', quantity: cal, unit: 'kcal' },
+  PROCNT: { label: 'Protein', quantity: protein, unit: 'g' },
+  FAT: { label: 'Fat', quantity: fat, unit: 'g' },
+  CHOCDF: { label: 'Carbs', quantity: carbs, unit: 'g' },
+  FIBTG: { label: 'Fiber', quantity: fiber, unit: 'g' },
+})
+
 const MOCK_EDAMAM_RESPONSE = {
-  calories: 812,
-  totalNutrients: {
-    PROCNT: { label: 'Protein', quantity: 62.4, unit: 'g' },
-    FAT: { label: 'Fat', quantity: 30.1, unit: 'g' },
-    CHOCDF: { label: 'Carbs', quantity: 78.5, unit: 'g' },
-    FIBTG: { label: 'Fiber', quantity: 6.2, unit: 'g' },
-  },
+  uri: 'http://www.edamam.com/ontologies/edamam.owl#recipe_test',
+  yield: 4,
+  ingredients: [
+    { text: '1 lb chicken breast', parsed: [{ nutrients: makeNutrients(500, 40, 10, 0, 0) }] },
+    { text: '2 cups rice', parsed: [{ nutrients: makeNutrients(260, 5.4, 0.6, 56, 1.2) }] },
+    { text: '2 tbsp olive oil', parsed: [{ nutrients: makeNutrients(52, 17, 19.5, 22.5, 5) }] },
+  ],
 }
+
+// Totals: 812 cal, 62.4 protein, 30.1 fat, 78.5 carbs, 6.2 fiber
 
 const TEST_INGREDIENTS = [
   { name: 'chicken breast', quantity: '1 lb' },

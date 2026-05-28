@@ -34,17 +34,36 @@ export async function analyzeNutritionWithEdamam(
 
     const data = await response.json();
 
-    if (typeof data.calories !== "number" || !data.totalNutrients) {
-      console.warn("Edamam API error: malformed response");
+    if (!Array.isArray(data.ingredients)) {
+      console.warn("Edamam API error: malformed response — no ingredients array");
       return null;
     }
 
+    let totalCalories = 0;
+    let totalProtein = 0;
+    let totalFat = 0;
+    let totalCarbs = 0;
+    let totalFiber = 0;
+
+    for (const ing of data.ingredients) {
+      for (const parsed of ing.parsed ?? []) {
+        const n = parsed.nutrients ?? {};
+        totalCalories += n.ENERC_KCAL?.quantity ?? 0;
+        totalProtein += n.PROCNT?.quantity ?? 0;
+        totalFat += n.FAT?.quantity ?? 0;
+        totalCarbs += n.CHOCDF?.quantity ?? 0;
+        totalFiber += n.FIBTG?.quantity ?? 0;
+      }
+    }
+
+    console.log(`[Edamam] Totals: ${Math.round(totalCalories)} cal, ${Math.round(totalProtein)}g protein, ${Math.round(totalFat)}g fat, ${Math.round(totalCarbs)}g carbs, ${Math.round(totalFiber)}g fiber`);
+
     return {
-      calories: Math.round(data.calories / servings),
-      protein: Math.round((data.totalNutrients.PROCNT?.quantity ?? 0) / servings),
-      fat: Math.round((data.totalNutrients.FAT?.quantity ?? 0) / servings),
-      carbs: Math.round((data.totalNutrients.CHOCDF?.quantity ?? 0) / servings),
-      fiber: Math.round((data.totalNutrients.FIBTG?.quantity ?? 0) / servings),
+      calories: Math.round(totalCalories / servings),
+      protein: Math.round(totalProtein / servings),
+      fat: Math.round(totalFat / servings),
+      carbs: Math.round(totalCarbs / servings),
+      fiber: Math.round(totalFiber / servings),
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
