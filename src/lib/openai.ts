@@ -18,8 +18,6 @@ const openaiChat = process.env.BRAINTRUST_API_KEY && process.env.BRAINTRUST_PROJ
     })
   : openai;
 
-console.log(`Together AI config: API_KEY=${process.env.TOGETHER_API_KEY ? "set" : "missing"}, MODEL=${process.env.TOGETHER_MODEL || "missing"}`);
-
 const togetherAI = process.env.TOGETHER_API_KEY && process.env.TOGETHER_MODEL
   ? new OpenAI({
       baseURL: "https://api.together.xyz/v1",
