@@ -195,7 +195,7 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
 
           <div className="mb-6">
             <h3 className="font-heading font-semibold mb-2">Nutrition Information (Per Serving)</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
               <div className="bg-gray-50 p-3 rounded-lg text-center">
                 <span className="block text-lg font-medium">{recipe.nutritionInfo.calories}</span>
                 <span className="text-sm text-gray-500">Calories</span>
@@ -212,6 +212,12 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
                 <span className="block text-lg font-medium">{recipe.nutritionInfo.carbs}g</span>
                 <span className="text-sm text-gray-500">Carbs</span>
               </div>
+              {recipe.nutritionInfo.fiber !== undefined && (
+                <div className="bg-gray-50 p-3 rounded-lg text-center">
+                  <span className="block text-lg font-medium">{recipe.nutritionInfo.fiber}g</span>
+                  <span className="text-sm text-gray-500">Fiber</span>
+                </div>
+              )}
             </div>
           </div>
 
