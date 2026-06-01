@@ -1,7 +1,13 @@
 import { Ingredient, NutritionInfo } from "./types";
 
 export const MAX_CALORIES_PER_SERVING = 1000;
+export const CALORIE_TARGET_MAX = 800;
 
+// --- Display-time quantity scaling -------------------------------------------
+// These helpers render a scaled quantity string (e.g. "2 lbs" → "1 lb") for a
+// future "edit servings" UI. scaleRecipePortions itself does NOT rewrite
+// ingredient amounts — it adjusts the serving count instead — so these are kept
+// for non-destructive display/derivation rather than mutating stored recipes.
 function singularizeUnit(unit: string): string {
   const parts = unit.split(" ");
   const first = parts[0];
@@ -58,27 +64,36 @@ export function scaleQuantity(quantity: string, factor: number): string {
   return quantity;
 }
 
+// Caps an over-target recipe by splitting the same food across more servings
+// rather than shrinking ingredient amounts. This keeps ingredient quantities
+// exactly as written (clean shopping amounts), keeps per-serving macros exact
+// (total is preserved, never re-rounded from scaled ingredients), and gives the
+// same scaling mechanism a future "edit servings" feature can reuse.
 export function scaleRecipePortions(recipeData: {
   ingredients: Ingredient[];
   nutritionInfo: NutritionInfo;
+  servings: number;
 }): void {
   const currentCalories = recipeData.nutritionInfo?.calories;
   if (!currentCalories || currentCalories <= MAX_CALORIES_PER_SERVING) return;
 
-  const scaleFactor = MAX_CALORIES_PER_SERVING / currentCalories;
+  // Smallest integer factor that brings per-serving calories to the ceiling.
+  // For any recipe over the 1000 trigger this is >= 2 and lands the result in a
+  // healthy ~400-800 band, so no fractional fallback is ever needed.
+  const k = Math.ceil(currentCalories / CALORIE_TARGET_MAX);
+  const baseServings = recipeData.servings || 1;
+  const newCalories = Math.round(currentCalories / k);
+
   console.log(
-    `Scaling recipe portions: ${currentCalories} cal/serving → ${MAX_CALORIES_PER_SERVING} cal/serving (factor: ${scaleFactor.toFixed(2)})`
+    `Scaling recipe portions: ${currentCalories} cal/serving → ${newCalories} cal/serving (servings ×${k}: ${baseServings} → ${baseServings * k})`
   );
 
-  for (const ing of recipeData.ingredients) {
-    ing.quantity = scaleQuantity(ing.quantity, scaleFactor);
-  }
-
-  recipeData.nutritionInfo.calories = Math.round(currentCalories * scaleFactor);
-  recipeData.nutritionInfo.protein = Math.round(recipeData.nutritionInfo.protein * scaleFactor);
-  recipeData.nutritionInfo.fat = Math.round(recipeData.nutritionInfo.fat * scaleFactor);
-  recipeData.nutritionInfo.carbs = Math.round(recipeData.nutritionInfo.carbs * scaleFactor);
+  recipeData.servings = baseServings * k;
+  recipeData.nutritionInfo.calories = newCalories;
+  recipeData.nutritionInfo.protein = Math.round(recipeData.nutritionInfo.protein / k);
+  recipeData.nutritionInfo.fat = Math.round(recipeData.nutritionInfo.fat / k);
+  recipeData.nutritionInfo.carbs = Math.round(recipeData.nutritionInfo.carbs / k);
   if (recipeData.nutritionInfo.fiber !== undefined) {
-    recipeData.nutritionInfo.fiber = Math.round(recipeData.nutritionInfo.fiber * scaleFactor);
+    recipeData.nutritionInfo.fiber = Math.round(recipeData.nutritionInfo.fiber / k);
   }
 }
