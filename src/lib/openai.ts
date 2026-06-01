@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { Ingredient, NutritionInfo } from "./types";
 import { analyzeNutritionWithEdamam } from "./edamam";
+import { scaleRecipePortions } from "./portion-scaling";
 
 // Configure OpenAI models from environment variables
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-2024-11-20";
@@ -355,6 +356,8 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
               dietary approaches including meat, fish, poultry, and plant-based options unless specific
               dietary restrictions are requested.
 
+              PORTION SIZING: Each serving should be a reasonable single-meal home-cooked portion. Use standard quantities — approximately 4-6 oz protein per person, 1/2-1 cup grains/starches, and generous vegetables. Target 350-800 calories per serving. Do not generate restaurant-sized portions.
+
               ${filtersText}
 
               Generate a complete recipe with clear instructions and accurate measurements.
@@ -408,6 +411,8 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
               dietary approaches including meat, fish, poultry, and plant-based options unless specific
               dietary restrictions are requested.
 
+              PORTION SIZING: Each serving should be a reasonable single-meal home-cooked portion. Use standard quantities — approximately 4-6 oz protein per person, 1/2-1 cup grains/starches, and generous vegetables. Target 350-800 calories per serving. Do not generate restaurant-sized portions.
+
               ${filtersText}
 
               Generate a complete recipe with clear instructions and accurate measurements.
@@ -455,9 +460,11 @@ VALIDATION: Before finalizing the recipe, double-check that EVERY ingredient com
             role: "system",
             content: `You are a professional chef specializing in creating delicious,
             healthy recipes with accurate nutritional information.
-            
+
+            PORTION SIZING: Each serving should be a reasonable single-meal home-cooked portion. Use standard quantities — approximately 4-6 oz protein per person, 1/2-1 cup grains/starches, and generous vegetables. Target 350-800 calories per serving. Do not generate restaurant-sized portions.
+
             ${filtersText}
-            
+
             Generate a complete recipe with clear instructions and accurate measurements.
             Ensure all dietary requirements are strictly followed and reflected in the dietaryTags.
             
@@ -808,6 +815,8 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
       recipeData.nutritionInfo = edamamNutrition;
     }
 
+    scaleRecipePortions(recipeData);
+
     return {
       ...recipeData,
       imageUrl
@@ -822,7 +831,7 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
           messages: [
             {
               role: "system",
-              content: `You are a professional chef. Generate a complete recipe as JSON: {"title","description","ingredients":[{"name","quantity"}],"instructions":[],"cookingTime","servings","dietaryTags":[],"nutritionInfo":{"calories","protein","fat","carbs"}}`,
+              content: `You are a professional chef. Each serving should be a reasonable single-meal portion (target 400-800 calories). Generate a complete recipe as JSON: {"title","description","ingredients":[{"name","quantity"}],"instructions":[],"cookingTime","servings","dietaryTags":[],"nutritionInfo":{"calories","protein","fat","carbs"}}`,
             },
             { role: "user", content: prompt },
           ],
@@ -840,6 +849,7 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
         if (edamamNutrition) {
           recipeData.nutritionInfo = edamamNutrition;
         }
+        scaleRecipePortions(recipeData);
         return { ...recipeData, imageUrl: null };
       } catch (fallbackError) {
         console.error("GPT-4o fallback also failed:", fallbackError);
