@@ -10,8 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RecipeCard } from "@/components/recipes/recipe-card";
 import { RecipeDetailModal } from "@/components/recipes/recipe-detail-modal";
 import { useQuery } from "@tanstack/react-query";
-import { Recipe } from "@/lib/types";
-import { User, Settings, ShoppingCart, Heart, History, ChevronLeft } from "lucide-react";
+import { Recipe, User } from "@/lib/types";
+import { User as UserIcon, Settings, ShoppingCart, Heart, History, ChevronLeft } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import Link from "next/link";
 
 export default function Dashboard() {
@@ -34,6 +37,35 @@ export default function Dashboard() {
     queryKey: ["/api/groceries"],
     enabled: activeTab === "grocery",
   });
+
+  const { toast } = useToast();
+
+  const { data: currentUser } = useQuery<User>({
+    queryKey: ["/api/auth/user"],
+    enabled: activeTab === "settings",
+  });
+
+  const handleDefaultServingsChange = async (value: string) => {
+    const defaultServings = value === "auto" ? null : parseInt(value, 10);
+    try {
+      const res = await apiRequest("PATCH", "/api/auth/user", { defaultServings });
+      if (!res.ok) throw new Error("Request failed");
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({
+        title: "Preference saved",
+        description:
+          defaultServings == null
+            ? "Default servings set to Auto"
+            : `New recipes will default to ${defaultServings} servings`,
+      });
+    } catch {
+      toast({
+        title: "Error saving preference",
+        description: "Could not update your default servings. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const openRecipeDetails = (recipe: Recipe) => {
     setSelectedRecipe(recipe);
@@ -107,7 +139,7 @@ export default function Dashboard() {
                     className={`w-full justify-start ${activeTab === "profile" ? "bg-primary/10 text-primary" : ""}`}
                     onClick={() => setActiveTab("profile")}
                   >
-                    <User className="mr-2 h-4 w-4" />
+                    <UserIcon className="mr-2 h-4 w-4" />
                     Profile
                   </Button>
                   <Button
@@ -317,6 +349,37 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-6">
+                        <div>
+                          <h3 className="font-medium">Recipe Preferences</h3>
+                          <p className="text-sm text-gray-500 mt-1 mb-2">
+                            New recipes divide their macros to match this serving count. The
+                            per-serving calorie cap still applies, so very large recipes may use
+                            more servings than chosen.
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <span>Default servings</span>
+                            <Select
+                              value={currentUser?.defaultServings != null ? String(currentUser.defaultServings) : "auto"}
+                              onValueChange={handleDefaultServingsChange}
+                            >
+                              <SelectTrigger className="w-44">
+                                <SelectValue placeholder="Auto (match recipe)" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="auto">Auto (match recipe)</SelectItem>
+                                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                                  <SelectItem key={n} value={String(n)}>
+                                    {n} {n === 1 ? "serving" : "servings"}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        {/* TODO: wire these placeholder toggles (email notifications, recipe
+                            recommendations, public profile, share recipes) to real user
+                            preferences — currently non-functional. */}
                         <div>
                           <h3 className="font-medium">Notification Preferences</h3>
                           <div className="mt-2 space-y-2">
