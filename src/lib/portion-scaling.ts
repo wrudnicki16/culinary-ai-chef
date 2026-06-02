@@ -136,7 +136,7 @@ export function deriveServingNutrition(
   baseServings: number,
   targetServings: number
 ): NutritionInfo {
-  const factor = targetServings > 0 ? baseServings / targetServings : 1;
+  const factor = targetServings > 0 && baseServings > 0 ? baseServings / targetServings : 1;
   const derived: NutritionInfo = {
     calories: Math.round(nutritionInfo.calories * factor),
     protein: Math.round(nutritionInfo.protein * factor),

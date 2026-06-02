@@ -256,4 +256,8 @@ describe("deriveServingNutrition", () => {
   it("guards against a zero target (no divide-by-zero)", () => {
     expect(deriveServingNutrition(base, 4, 0)).toEqual(base);
   });
+
+  it("guards against a zero base servings (no divide-by-zero / no zeroing-out)", () => {
+    expect(deriveServingNutrition(base, 0, 4)).toEqual(base);
+  });
 });
