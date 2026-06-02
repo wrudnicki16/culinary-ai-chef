@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CheckCircle,
   X,
@@ -11,13 +11,16 @@ import {
   Heart,
   ShoppingCart,
   Utensils,
-  UtensilsCrossed
+  UtensilsCrossed,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Rating } from "@/components/ui/rating";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { deriveServingNutrition } from "@/lib/portion-scaling";
 import { Recipe, Comment } from "@/lib/types";
 import { SAMPLE_RECIPE_IMAGES } from "@/lib/utils";
 import { FormattedText } from "@/components/ui/formatted-text";
@@ -38,8 +41,26 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
   const { toast } = useToast();
+  const [selectedServings, setSelectedServings] = useState<number>(recipe?.servings ?? 1);
+
+  useEffect(() => {
+    if (recipe) setSelectedServings(recipe.servings);
+  }, [recipe?.id, recipe?.servings, open]);
 
   if (!recipe) return null;
+
+  const displayedNutrition = deriveServingNutrition(
+    recipe.nutritionInfo,
+    recipe.servings,
+    selectedServings
+  );
+  // Contiguous 1..N range (N is at least 12, extended if this recipe's base
+  // count is higher). A range is inherently ordered, gap-free, and starts at 1,
+  // so no dedup/filter/sort is needed — and a base of 0 or less can't slip in.
+  const servingsOptions = Array.from(
+    { length: Math.max(12, recipe.servings) },
+    (_, i) => i + 1
+  );
 
   const handleRatingChange = (newRating: number) => {
     setUserRating(newRating);
@@ -127,23 +148,50 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
             />
           </div>
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-6">
-            <div className="flex items-center space-x-2 text-white">
-              {recipe.dietaryTags.slice(0, 3).map(tag => (
-                <Badge
-                  key={tag}
-                  className="bg-primary text-white text-xs px-2 py-0.5 rounded-full"
-                >
-                  {tag}
-                </Badge>
-              ))}
-              <span className="flex items-center text-sm">
-                <Star className="h-4 w-4 text-yellow-400 mr-1" />
-                {recipe.rating.toFixed(1)} ({recipe.ratingCount} ratings)
-              </span>
-              <span className="flex items-center text-sm">
-                <Timer className="h-4 w-4 mr-1" />
-                {recipe.cookingTime} min
-              </span>
+            <div className="flex items-center justify-between gap-2 text-white flex-wrap">
+              {/* Allergen / dietary pills — left */}
+              <div className="flex items-center gap-2 flex-wrap" data-testid="allergen-pills">
+                {recipe.dietaryTags.slice(0, 3).map(tag => (
+                  <Badge
+                    key={tag}
+                    className="bg-primary text-white text-xs px-2 py-0.5 rounded-full"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+              {/* Stars · time · servings — right */}
+              <div className="flex items-center gap-3" data-testid="recipe-meta">
+                <span className="flex items-center text-sm">
+                  <Star className="h-4 w-4 text-yellow-400 mr-1" />
+                  {recipe.rating.toFixed(1)} ({recipe.ratingCount} ratings)
+                </span>
+                <span className="flex items-center text-sm">
+                  <Timer className="h-4 w-4 mr-1" />
+                  {recipe.cookingTime} min
+                </span>
+                <div className="flex items-center text-sm">
+                  <Users className="h-4 w-4 mr-1" />
+                  <Select
+                    value={String(selectedServings)}
+                    onValueChange={(v) => setSelectedServings(parseInt(v, 10))}
+                  >
+                    <SelectTrigger
+                      aria-label="Servings"
+                      className="h-7 w-[7.5rem] border-white/40 bg-white/10 text-white text-sm focus:ring-white/50"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {servingsOptions.map((n) => (
+                        <SelectItem key={n} value={String(n)}>
+                          {n} {n === 1 ? "serving" : "servings"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -197,24 +245,24 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
             <h3 className="font-heading font-semibold mb-2">Nutrition Information (Per Serving)</h3>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
               <div className="bg-gray-50 p-3 rounded-lg text-center">
-                <span className="block text-lg font-medium">{recipe.nutritionInfo.calories}</span>
+                <span className="block text-lg font-medium">{displayedNutrition.calories}</span>
                 <span className="text-sm text-gray-500">Calories</span>
               </div>
               <div className="bg-gray-50 p-3 rounded-lg text-center">
-                <span className="block text-lg font-medium">{recipe.nutritionInfo.protein}g</span>
+                <span className="block text-lg font-medium">{displayedNutrition.protein}g</span>
                 <span className="text-sm text-gray-500">Protein</span>
               </div>
               <div className="bg-gray-50 p-3 rounded-lg text-center">
-                <span className="block text-lg font-medium">{recipe.nutritionInfo.fat}g</span>
+                <span className="block text-lg font-medium">{displayedNutrition.fat}g</span>
                 <span className="text-sm text-gray-500">Fat</span>
               </div>
               <div className="bg-gray-50 p-3 rounded-lg text-center">
-                <span className="block text-lg font-medium">{recipe.nutritionInfo.carbs}g</span>
+                <span className="block text-lg font-medium">{displayedNutrition.carbs}g</span>
                 <span className="text-sm text-gray-500">Carbs</span>
               </div>
               {recipe.nutritionInfo.fiber !== undefined && (
                 <div className="bg-gray-50 p-3 rounded-lg text-center">
-                  <span className="block text-lg font-medium">{recipe.nutritionInfo.fiber}g</span>
+                  <span className="block text-lg font-medium">{displayedNutrition.fiber}g</span>
                   <span className="text-sm text-gray-500">Fiber</span>
                 </div>
               )}

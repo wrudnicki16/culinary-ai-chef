@@ -48,8 +48,8 @@ export default function Dashboard() {
   const handleDefaultServingsChange = async (value: string) => {
     const defaultServings = value === "auto" ? null : parseInt(value, 10);
     try {
-      const res = await apiRequest("PATCH", "/api/auth/user", { defaultServings });
-      if (!res.ok) throw new Error("Request failed");
+      // apiRequest throws on a non-OK response, so reaching here means success.
+      await apiRequest("PATCH", "/api/auth/user", { defaultServings });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
         title: "Preference saved",
