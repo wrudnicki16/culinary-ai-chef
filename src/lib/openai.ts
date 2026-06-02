@@ -132,7 +132,7 @@ export async function validateRecipeSafety(recipe: {
 }
 
 // Generate a new recipe from a prompt
-export async function generateRecipe(prompt: string, dietaryFilters: string[] = []): Promise<{
+export async function generateRecipe(prompt: string, dietaryFilters: string[] = [], targetServings: number | null = null): Promise<{
   title: string;
   description: string;
   imageUrl: string | null;
@@ -815,7 +815,7 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
       recipeData.nutritionInfo = edamamNutrition;
     }
 
-    scaleRecipePortions(recipeData);
+    scaleRecipePortions(recipeData, targetServings);
 
     return {
       ...recipeData,
@@ -849,7 +849,7 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
         if (edamamNutrition) {
           recipeData.nutritionInfo = edamamNutrition;
         }
-        scaleRecipePortions(recipeData);
+        scaleRecipePortions(recipeData, targetServings);
         return { ...recipeData, imageUrl: null };
       } catch (fallbackError) {
         console.error("GPT-4o fallback also failed:", fallbackError);

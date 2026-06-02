@@ -23,6 +23,9 @@ export async function POST(request: NextRequest) {
     const { prompt, dietaryFilters } = bodyResult;
     const userId = authResult.id;
 
+    const user = await storage.getUser(userId);
+    const targetServings = user?.defaultServings ?? null;
+
     console.log(`Route received filters: ${JSON.stringify(dietaryFilters)}`);
 
     // Research related recipes using RAG if we have embeddings
@@ -39,7 +42,8 @@ export async function POST(request: NextRequest) {
     // Generate the recipe
     const recipeData = await generateRecipe(
       `${prompt}\n\n${researchContext}`,
-      dietaryFilters
+      dietaryFilters,
+      targetServings
     );
 
     // Insert into database
