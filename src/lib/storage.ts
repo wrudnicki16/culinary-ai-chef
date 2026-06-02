@@ -21,6 +21,7 @@ export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUsersByRole(role: string): Promise<User[]>;
+  updateUserPreferences(id: string, prefs: { defaultServings: number | null }): Promise<User | undefined>;
 
   // Recipe operations
   getRecipe(id: number): Promise<Recipe | undefined>;
@@ -96,6 +97,15 @@ export class Storage implements IStorage {
 
   async getUsersByRole(role: string): Promise<User[]> {
     return await db.select().from(users).where(sql`${users.roles} ? ${role}`);
+  }
+
+  async updateUserPreferences(id: string, prefs: { defaultServings: number | null }): Promise<User | undefined> {
+    const result = await db
+      .update(users)
+      .set({ ...prefs, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
   }
 
   async getRecipe(id: number): Promise<Recipe | undefined> {
