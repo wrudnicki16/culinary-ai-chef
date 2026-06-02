@@ -126,3 +126,25 @@ export function scaleRecipePortions(
     recipeData.nutritionInfo.fiber = Math.round((recipeData.nutritionInfo.fiber * baseServings) / effective);
   }
 }
+
+// Re-derives per-serving nutrition for a different serving count WITHOUT
+// mutating the recipe. Total nutrition is treated as fixed (perServing ×
+// baseServings); this is the display-time layer used by the recipe modal's
+// servings dropdown. Returns rounded per-serving values for the chosen count.
+export function deriveServingNutrition(
+  nutritionInfo: NutritionInfo,
+  baseServings: number,
+  targetServings: number
+): NutritionInfo {
+  const factor = targetServings > 0 ? baseServings / targetServings : 1;
+  const derived: NutritionInfo = {
+    calories: Math.round(nutritionInfo.calories * factor),
+    protein: Math.round(nutritionInfo.protein * factor),
+    fat: Math.round(nutritionInfo.fat * factor),
+    carbs: Math.round(nutritionInfo.carbs * factor),
+  };
+  if (nutritionInfo.fiber !== undefined) {
+    derived.fiber = Math.round(nutritionInfo.fiber * factor);
+  }
+  return derived;
+}

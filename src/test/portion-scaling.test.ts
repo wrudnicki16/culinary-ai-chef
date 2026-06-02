@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { scaleQuantity, formatScaledQuantity, scaleRecipePortions, MAX_CALORIES_PER_SERVING } from "@/lib/portion-scaling";
+import { scaleQuantity, formatScaledQuantity, scaleRecipePortions, deriveServingNutrition, MAX_CALORIES_PER_SERVING } from "@/lib/portion-scaling";
 
 describe("formatScaledQuantity", () => {
   it("formats whole numbers", () => {
@@ -225,5 +225,35 @@ describe("scaleRecipePortions", () => {
     scaleRecipePortions(recipe, 4);
     expect(recipe.servings).toBe(4);
     expect(recipe.nutritionInfo.calories).toBe(500);
+  });
+});
+
+describe("deriveServingNutrition", () => {
+  const base = { calories: 600, protein: 40, fat: 20, carbs: 50, fiber: 8 };
+
+  it("returns the same values when target equals base servings", () => {
+    expect(deriveServingNutrition(base, 4, 4)).toEqual(base);
+  });
+
+  it("halves per-serving values when servings double", () => {
+    expect(deriveServingNutrition(base, 4, 8)).toEqual({
+      calories: 300, protein: 20, fat: 10, carbs: 25, fiber: 4,
+    });
+  });
+
+  it("doubles per-serving values when servings halve", () => {
+    expect(deriveServingNutrition(base, 4, 2)).toEqual({
+      calories: 1200, protein: 80, fat: 40, carbs: 100, fiber: 16,
+    });
+  });
+
+  it("omits fiber when the source has none", () => {
+    const result = deriveServingNutrition({ calories: 400, protein: 10, fat: 5, carbs: 60 }, 2, 4);
+    expect(result).toEqual({ calories: 200, protein: 5, fat: 3, carbs: 30 });
+    expect(result.fiber).toBeUndefined();
+  });
+
+  it("guards against a zero target (no divide-by-zero)", () => {
+    expect(deriveServingNutrition(base, 4, 0)).toEqual(base);
   });
 });
