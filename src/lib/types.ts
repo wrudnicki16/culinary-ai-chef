@@ -7,6 +7,7 @@ export interface User {
   lastName: string | null;
   profileImageUrl: string | null;
   roles: string[];
+  defaultServings?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -104,4 +105,8 @@ export const filterSchema = z.object({
   filters: z.array(z.string()).optional(),
   search: z.string().optional(),
   sort: z.enum(['popular', 'newest', 'quickest']).optional(),
+});
+
+export const userPreferencesSchema = z.object({
+  defaultServings: z.number().int().min(1).max(12).nullable(),
 });

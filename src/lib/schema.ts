@@ -14,6 +14,7 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   profileImageUrl: text("profile_image_url"),
   roles: jsonb("roles").default("[]").notNull().$type<string[]>(),
+  defaultServings: integer("default_servings"), // null = "Auto" (no preference)
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
