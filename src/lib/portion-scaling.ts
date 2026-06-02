@@ -69,31 +69,60 @@ export function scaleQuantity(quantity: string, factor: number): string {
 // exactly as written (clean shopping amounts), keeps per-serving macros exact
 // (total is preserved, never re-rounded from scaled ingredients), and gives the
 // same scaling mechanism a future "edit servings" feature can reuse.
-export function scaleRecipePortions(recipeData: {
-  ingredients: Ingredient[];
-  nutritionInfo: NutritionInfo;
-  servings: number;
-}): void {
+export function scaleRecipePortions(
+  recipeData: {
+    ingredients: Ingredient[];
+    nutritionInfo: NutritionInfo;
+    servings: number;
+  },
+  targetServings?: number | null
+): void {
   const currentCalories = recipeData.nutritionInfo?.calories;
-  if (!currentCalories || currentCalories <= MAX_CALORIES_PER_SERVING) return;
+  if (!currentCalories) return;
 
-  // Smallest integer factor that brings per-serving calories to the ceiling.
-  // For any recipe over the 1000 trigger this is >= 2 and lands the result in a
-  // healthy ~400-800 band, so no fractional fallback is ever needed.
-  const k = Math.ceil(currentCalories / CALORIE_TARGET_MAX);
   const baseServings = recipeData.servings || 1;
-  const newCalories = Math.round(currentCalories / k);
 
+  // No user preference: keep the original cap-only behavior. Only act on
+  // recipes over the trigger, scaling by the smallest integer multiple that
+  // lands per-serving calories in the ~400-800 band.
+  if (targetServings == null) {
+    if (currentCalories <= MAX_CALORIES_PER_SERVING) return;
+    const k = Math.ceil(currentCalories / CALORIE_TARGET_MAX);
+    const newCalories = Math.round(currentCalories / k);
+    console.log(
+      `Scaling recipe portions: ${currentCalories} cal/serving → ${newCalories} cal/serving (servings ×${k}: ${baseServings} → ${baseServings * k})`
+    );
+    recipeData.servings = baseServings * k;
+    recipeData.nutritionInfo.calories = newCalories;
+    recipeData.nutritionInfo.protein = Math.round(recipeData.nutritionInfo.protein / k);
+    recipeData.nutritionInfo.fat = Math.round(recipeData.nutritionInfo.fat / k);
+    recipeData.nutritionInfo.carbs = Math.round(recipeData.nutritionInfo.carbs / k);
+    if (recipeData.nutritionInfo.fiber !== undefined) {
+      recipeData.nutritionInfo.fiber = Math.round(recipeData.nutritionInfo.fiber / k);
+    }
+    return;
+  }
+
+  // User has a default-servings preference. Treat the recipe as immutable
+  // (total nutrition fixed) and choose the serving count: honor the user's
+  // target, but never let a serving exceed the calorie cap (hard floor on N).
+  const totalCalories = currentCalories * baseServings;
+  const capMin = Math.ceil(totalCalories / MAX_CALORIES_PER_SERVING);
+  const effective = Math.max(targetServings, capMin, 1);
+
+  if (effective === baseServings) return;
+
+  const newCalories = Math.round(totalCalories / effective);
   console.log(
-    `Scaling recipe portions: ${currentCalories} cal/serving → ${newCalories} cal/serving (servings ×${k}: ${baseServings} → ${baseServings * k})`
+    `Scaling recipe portions to default: ${baseServings} → ${effective} servings (target ${targetServings}, capMin ${capMin}); ${currentCalories} → ${newCalories} cal/serving`
   );
-
-  recipeData.servings = baseServings * k;
+  recipeData.servings = effective;
+  // Same per-macro rounding as the null branch above — keep in sync if fields change.
   recipeData.nutritionInfo.calories = newCalories;
-  recipeData.nutritionInfo.protein = Math.round(recipeData.nutritionInfo.protein / k);
-  recipeData.nutritionInfo.fat = Math.round(recipeData.nutritionInfo.fat / k);
-  recipeData.nutritionInfo.carbs = Math.round(recipeData.nutritionInfo.carbs / k);
+  recipeData.nutritionInfo.protein = Math.round((recipeData.nutritionInfo.protein * baseServings) / effective);
+  recipeData.nutritionInfo.fat = Math.round((recipeData.nutritionInfo.fat * baseServings) / effective);
+  recipeData.nutritionInfo.carbs = Math.round((recipeData.nutritionInfo.carbs * baseServings) / effective);
   if (recipeData.nutritionInfo.fiber !== undefined) {
-    recipeData.nutritionInfo.fiber = Math.round(recipeData.nutritionInfo.fiber / k);
+    recipeData.nutritionInfo.fiber = Math.round((recipeData.nutritionInfo.fiber * baseServings) / effective);
   }
 }

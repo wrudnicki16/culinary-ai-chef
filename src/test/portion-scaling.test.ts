@@ -169,4 +169,61 @@ describe("scaleRecipePortions", () => {
     expect(recipe.servings).toBe(10);
     expect(recipe.ingredients[0].quantity).toBe("4 cups");
   });
+
+  it("honors a default-servings preference, dividing total nutrition (no cap interference)", () => {
+    // base 2 servings @ 400 cal => 800 total; default 4 => 200 cal/serving
+    const recipe = {
+      ingredients: [{ name: "oats", quantity: "1 cup" }],
+      servings: 2,
+      nutritionInfo: { calories: 400, protein: 20, fat: 10, carbs: 50, fiber: 8 },
+    };
+    scaleRecipePortions(recipe, 4);
+    expect(recipe.servings).toBe(4);
+    expect(recipe.nutritionInfo.calories).toBe(200);
+    expect(recipe.nutritionInfo.protein).toBe(10);
+    expect(recipe.nutritionInfo.fat).toBe(5);
+    expect(recipe.nutritionInfo.carbs).toBe(25);
+    expect(recipe.nutritionInfo.fiber).toBe(4);
+    expect(recipe.ingredients[0].quantity).toBe("1 cup");
+  });
+
+  it("treats the calorie cap as a hard floor when the default is too low", () => {
+    // base 1 serving @ 2400 cal => 2400 total; default 1 would be 2400/serving,
+    // capMin = ceil(2400/1000) = 3 => 800 cal/serving wins
+    const recipe = {
+      ingredients: [{ name: "butter", quantity: "2 cups" }],
+      servings: 1,
+      nutritionInfo: { calories: 2400, protein: 30, fat: 240, carbs: 15 },
+    };
+    scaleRecipePortions(recipe, 1);
+    expect(recipe.servings).toBe(3);
+    expect(recipe.nutritionInfo.calories).toBe(800);
+    expect(recipe.ingredients[0].quantity).toBe("2 cups");
+  });
+
+  it("honors a default above the natural servings for an under-cap recipe", () => {
+    // base 4 servings @ 500 cal => 2000 total; default 8 => 250 cal/serving
+    const recipe = {
+      ingredients: [{ name: "rice", quantity: "3 cups" }],
+      servings: 4,
+      nutritionInfo: { calories: 500, protein: 40, fat: 16, carbs: 60 },
+    };
+    scaleRecipePortions(recipe, 8);
+    expect(recipe.servings).toBe(8);
+    expect(recipe.nutritionInfo.calories).toBe(250);
+    expect(recipe.nutritionInfo.protein).toBe(20);
+    expect(recipe.nutritionInfo.fat).toBe(8);
+    expect(recipe.nutritionInfo.carbs).toBe(30);
+  });
+
+  it("does nothing when the default equals the natural servings", () => {
+    const recipe = {
+      ingredients: [{ name: "rice", quantity: "3 cups" }],
+      servings: 4,
+      nutritionInfo: { calories: 500, protein: 40, fat: 16, carbs: 60 },
+    };
+    scaleRecipePortions(recipe, 4);
+    expect(recipe.servings).toBe(4);
+    expect(recipe.nutritionInfo.calories).toBe(500);
+  });
 });
