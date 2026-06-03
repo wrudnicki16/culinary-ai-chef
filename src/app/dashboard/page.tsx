@@ -46,11 +46,6 @@ export default function Dashboard() {
   const { data: currentUser } = useQuery<User>({
     queryKey: ["/api/auth/user"],
     enabled: activeTab === "settings",
-    // The app's QueryClient has no default queryFn, so fetch explicitly here.
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/auth/user");
-      return res.json();
-    },
   });
 
   // Local select value so the choice shows instantly and isn't tied to refetch
