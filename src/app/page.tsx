@@ -101,14 +101,24 @@ export default function Home() {
     }
   }, [data?.recipes, currentPage]);
 
-  // Reset pagination when filters, search, or sort changes
+  // Reset pagination when filters, search, or sort changes — but NOT on the
+  // initial mount. On a remount with cached data, the load effect above fills
+  // allRecipes synchronously; without this guard the reset would run right
+  // after and wipe the just-loaded list (e.g. returning from the dashboard).
+  const isInitialMount = useRef(true);
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     setCurrentPage(1);
     setAllRecipes([]);
   }, [activeFilters, searchTerm, sortOption]);
-  
-  // Use accumulated recipes for display
-  const recipes = allRecipes;
+
+  // Use accumulated recipes for display, falling back to the current query page
+  // while the accumulator is still empty (e.g. the first render after a cached
+  // remount) so the list never flashes empty.
+  const recipes = allRecipes.length > 0 ? allRecipes : (data?.recipes ?? []);
 
   // Debounced search function
   const debouncedSearch = debounce((value: string) => {
