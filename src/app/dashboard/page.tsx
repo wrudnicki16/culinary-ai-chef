@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,12 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RecipeCard } from "@/components/recipes/recipe-card";
 import { RecipeDetailModal } from "@/components/recipes/recipe-detail-modal";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Recipe, User } from "@/lib/types";
 import { User as UserIcon, Settings, ShoppingCart, Heart, History, ChevronLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import Link from "next/link";
 
 export default function Dashboard() {
@@ -39,26 +39,52 @@ export default function Dashboard() {
   });
 
   const { toast } = useToast();
+  // The client the provider supplies (the one these components read from) — NOT
+  // the imported singleton, so cache writes below actually reach this cache.
+  const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery<User>({
     queryKey: ["/api/auth/user"],
     enabled: activeTab === "settings",
+    // The app's QueryClient has no default queryFn, so fetch explicitly here.
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/auth/user");
+      return res.json();
+    },
   });
 
+  // Local select value so the choice shows instantly and isn't tied to refetch
+  // timing. Kept in sync with the persisted value whenever the user loads.
+  const [defaultServings, setDefaultServings] = useState<string>("auto");
+
+  useEffect(() => {
+    if (currentUser) {
+      setDefaultServings(
+        currentUser.defaultServings != null ? String(currentUser.defaultServings) : "auto"
+      );
+    }
+  }, [currentUser?.defaultServings]);
+
   const handleDefaultServingsChange = async (value: string) => {
-    const defaultServings = value === "auto" ? null : parseInt(value, 10);
+    const previous = defaultServings;
+    setDefaultServings(value); // optimistic: reflect the choice immediately
+    const parsed = value === "auto" ? null : parseInt(value, 10);
     try {
       // apiRequest throws on a non-OK response, so reaching here means success.
-      await apiRequest("PATCH", "/api/auth/user", { defaultServings });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      await apiRequest("PATCH", "/api/auth/user", { defaultServings: parsed });
+      // Write the saved value into the cache so returning to this tab keeps it.
+      queryClient.setQueryData<User>(["/api/auth/user"], (old) =>
+        old ? { ...old, defaultServings: parsed } : old
+      );
       toast({
         title: "Preference saved",
         description:
-          defaultServings == null
+          parsed == null
             ? "Default servings set to Auto"
-            : `New recipes will default to ${defaultServings} servings`,
+            : `New recipes will default to ${parsed} servings`,
       });
     } catch {
+      setDefaultServings(previous); // revert so a failed save is visible
       toast({
         title: "Error saving preference",
         description: "Could not update your default servings. Please try again.",
@@ -359,7 +385,7 @@ export default function Dashboard() {
                           <div className="flex items-center justify-between">
                             <span>Default servings</span>
                             <Select
-                              value={currentUser?.defaultServings != null ? String(currentUser.defaultServings) : "auto"}
+                              value={defaultServings}
                               onValueChange={handleDefaultServingsChange}
                             >
                               <SelectTrigger className="w-44">
