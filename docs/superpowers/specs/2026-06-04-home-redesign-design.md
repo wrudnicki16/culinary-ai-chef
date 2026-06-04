@@ -69,12 +69,13 @@ This removes the page-level top "Active filters" chip and places it with the lis
 
 ## Preserved Behaviors
 
-Contradiction detection + warning dialog, High-Protein personalization dialog, `AILoadingModal` with cancel, `queryClient.invalidateQueries(['/api/recipes'])` after generate, and the existing Recommended-list pagination/caching fixes (`page.tsx` accumulator + reset-guard) all remain.
+`AILoadingModal` with cancel, `queryClient.invalidateQueries(['/api/recipes'])` after generate, and the existing Recommended-list pagination/caching fixes (`page.tsx` accumulator + reset-guard) all remain.
 
 ## Out of Scope
 
 - **Phase 2:** the standalone Search page the hero search routes to (own spec). Until then, the hero search box keeps its current behavior (filters the existing `/api/recipes` query in place) — no new routing in Phase 1.
 - Visual styling / CTA color (intentionally unchanged).
+- **Deferred from the old `RecipeGenerator` (were previously "preserved"):** the contradiction-detection warning and the High-Protein personalization dialog are dropped in Phase 1. Contradiction detection can return against the modal's diet selections whenever convenient. The High-Protein protein-target calculator is a **post-Phase-2 backlog item** — it also needs a default user weight, which the app doesn't capture today.
 - **Known follow-up (not this spec):** browse-sidebar filter *values* must match recipes' stored `dietaryTags` for filtering to actually narrow results — a pre-existing matching gap. Generation is unaffected (selected filters only feed the prompt text + `dietaryFilters` payload).
 
 ## Testing
