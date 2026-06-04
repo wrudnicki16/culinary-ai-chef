@@ -153,13 +153,21 @@ export class Storage implements IStorage {
       countQuery = countQuery.where(whereClause);
     }
 
-    // Apply sorting
+    // Apply sorting.
+    // Ratings aren't populated yet, so every sort
+    // uses createdAt desc (newest-first) as a stable secondary tiebreak.
     switch (sort) {
+      case 'popular':
+        query = query.orderBy(desc(recipes.rating), desc(recipes.ratingCount), desc(recipes.createdAt));
+        break;
+      case 'quickest':
+        query = query.orderBy(asc(recipes.cookingTime), desc(recipes.createdAt));
+        break;
       case 'oldest':
         query = query.orderBy(asc(recipes.createdAt));
         break;
       case 'rating':
-        query = query.orderBy(desc(recipes.rating));
+        query = query.orderBy(desc(recipes.rating), desc(recipes.createdAt));
         break;
       case 'newest':
       default:
