@@ -14,33 +14,43 @@ export function formatDate(date: Date): string {
 }
 
 export const DIETARY_FILTERS = {
+  // First 4 shown by default in the guided modal; the rest behind "Load more".
   dietType: [
     { id: "vegetarian", label: "Vegetarian" },
     { id: "vegan", label: "Vegan" },
-    { id: "highProtein", label: "High Protein" },
     { id: "keto", label: "Keto" },
+    { id: "glutenFree", label: "Gluten-Free" },
+    { id: "highProtein", label: "High Protein" },
     { id: "paleo", label: "Paleo" },
     { id: "lowCarb", label: "Low Carb" },
-  ],
-  allergies: [
-    { id: "nutFree", label: "Nut Allergy" },
-    { id: "glutenFree", label: "Celiac Friendly" },
-    { id: "dairyFree", label: "Dairy Free" },
-    { id: "lowOxalate", label: "Low Oxalate" },
-  ],
-  health: [
-    { id: "heartHealthy", label: "Heart Healthy" },
+    { id: "whole30", label: "Whole30" },
+    { id: "pescatarian", label: "Pescatarian" },
+    { id: "noRedMeat", label: "No Red Meat" },
+    { id: "dash", label: "DASH" },
     { id: "lowSodium", label: "Low Sodium" },
     { id: "diabetic", label: "Diabetic Friendly" },
   ],
-  trending: [
-    { id: "mediterranean", label: "Mediterranean" },
-    { id: "whole30", label: "Whole30" },
-    { id: "airFryer", label: "Air Fryer" },
-    { id: "onePot", label: "One Pot" },
-    { id: "adaptogens", label: "Adaptogens" },
+  allergies: [
+    { id: "dairy", label: "Dairy" },
+    { id: "eggs", label: "Eggs" },
+    { id: "peanuts", label: "Peanuts" },
+    { id: "treeNuts", label: "Tree Nuts" },
+    { id: "wheat", label: "Wheat" },
+    { id: "soy", label: "Soy" },
+    { id: "fish", label: "Fish" },
+    { id: "shellfish", label: "Shellfish" },
+    { id: "sesame", label: "Sesame" },
+  ],
+  mealType: [
+    { id: "any", label: "Any" },
+    { id: "breakfast", label: "Breakfast" },
+    { id: "lunch", label: "Lunch" },
+    { id: "dinner", label: "Dinner" },
+    { id: "snack", label: "Snack" },
+    { id: "dessert", label: "Dessert" },
   ],
   cuisines: [
+    { id: "mediterranean", label: "Mediterranean" },
     { id: "italian", label: "Italian" },
     { id: "mexican", label: "Mexican" },
     { id: "japanese", label: "Japanese" },
@@ -89,7 +99,7 @@ export function debounce<T extends (...args: never[]) => unknown>(
   wait: number
 ): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout | null = null;
-  
+
   return (...args: Parameters<T>) => {
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
@@ -107,7 +117,7 @@ const CONTRADICTORY_COMBINATIONS = [
     message: "Vegan and Paleo diets are fundamentally incompatible. Paleo emphasizes animal proteins while vegan excludes all animal products."
   },
   {
-    filters: ["keto", "dairyfree"],
+    filters: ["keto", "dairy"],
     message: "Keto and Dairy-Free can be difficult to combine. Keto relies heavily on dairy fats, so dairy-free keto requires alternative fat sources."
   },
   {
@@ -123,23 +133,23 @@ export function detectContradictoryFilters(selectedFilters: string[]): {
   const normalizedFilters = selectedFilters.map(f => f.toLowerCase());
   const warnings: string[] = [];
   const processedCombinations = new Set<string>();
-  
+
   for (const combination of CONTRADICTORY_COMBINATIONS) {
-    const hasAllFilters = combination.filters.every(filter => 
+    const hasAllFilters = combination.filters.every(filter =>
       normalizedFilters.includes(filter.toLowerCase())
     );
-    
+
     if (hasAllFilters) {
       // Create a sorted key to avoid duplicates (e.g., "vegan,paleo" and "paleo,vegan")
       const combinationKey = combination.filters.sort().join(',');
-      
+
       if (!processedCombinations.has(combinationKey)) {
         warnings.push(combination.message);
         processedCombinations.add(combinationKey);
       }
     }
   }
-  
+
   return {
     hasContradictions: warnings.length > 0,
     warnings
