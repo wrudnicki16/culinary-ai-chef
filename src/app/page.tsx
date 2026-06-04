@@ -6,7 +6,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { RecipeCard } from "@/components/recipes/recipe-card";
 import { RecipeDetailModal } from "@/components/recipes/recipe-detail-modal";
-import { RecipeGenerator } from "@/components/recipes/recipe-generator";
+import { RecipeCreator } from "@/components/recipes/recipe-creator";
 import { FilterSidebar } from "@/components/recipes/filter-sidebar";
 import { FilterChip } from "@/components/filters/filter-chip";
 import { ChatWidget } from "@/components/ui/chat-widget";
@@ -186,6 +186,9 @@ export default function Home() {
           {/* Hero Banner */}
           <HeroSection onSearchChange={handleSearchInput} />
 
+          {/* Recipe Creator — full width, above the sidebar/content row */}
+          <RecipeCreator onRecipeGenerated={handleRecipeGenerated} />
+
           <div className="flex flex-col md:flex-row gap-8">
             {/* Filter Sidebar */}
             <FilterSidebar
@@ -195,28 +198,6 @@ export default function Home() {
 
             {/* Main Content */}
             <div className="flex-1">
-              {/* Active Filters */}
-              {activeFilters.length > 0 && (
-                <div className="mb-6 flex items-center flex-wrap gap-2">
-                  <span className="text-sm font-medium text-gray-500">
-                    Active filters:
-                  </span>
-                  {activeFilters.map((filterId) => (
-                    <FilterChip
-                      key={filterId}
-                      id={filterId}
-                      label={getFilterLabelById(filterId)}
-                      isActive={true}
-                      onClick={() => {}}
-                      onRemove={() => removeFilter(filterId)}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Recipe Generator */}
-              <RecipeGenerator onRecipeGenerated={handleRecipeGenerated} />
-
               {/* Recipe Recommendations */}
               <section>
                 <div className="flex items-center justify-between mb-5">
@@ -242,6 +223,25 @@ export default function Home() {
                     </Select>
                   </div>
                 </div>
+
+                {/* Active Filters */}
+                {activeFilters.length > 0 && (
+                  <div className="mb-6 flex items-center flex-wrap gap-2">
+                    <span className="text-sm font-medium text-gray-500">
+                      Active filters:
+                    </span>
+                    {activeFilters.map((filterId) => (
+                      <FilterChip
+                        key={filterId}
+                        id={filterId}
+                        label={getFilterLabelById(filterId)}
+                        isActive={true}
+                        onClick={() => {}}
+                        onRemove={() => removeFilter(filterId)}
+                      />
+                    ))}
+                  </div>
+                )}
 
                 {/* Recipe Grid */}
                 {isLoading ? (
