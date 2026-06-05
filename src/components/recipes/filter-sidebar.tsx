@@ -75,26 +75,9 @@ export function FilterSidebar({
             </div>
 
             <div>
-              <h4 className="font-medium text-sm text-gray-500 mb-2">
-                Health Concerns
-              </h4>
+              <h4 className="font-medium text-sm text-gray-500 mb-2">Cuisine</h4>
               <div className="flex flex-wrap gap-2">
-                {DIETARY_FILTERS.health.map((filter) => (
-                  <FilterChip
-                    key={filter.id}
-                    id={filter.id}
-                    label={filter.label}
-                    isActive={selectedFilters.includes(filter.id)}
-                    onClick={() => toggleFilter(filter.id)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-medium text-sm text-gray-500 mb-2">Trending</h4>
-              <div className="flex flex-wrap gap-2">
-                {DIETARY_FILTERS.trending.map((filter) => (
+                {DIETARY_FILTERS.cuisines.map((filter) => (
                   <FilterChip
                     key={filter.id}
                     id={filter.id}
