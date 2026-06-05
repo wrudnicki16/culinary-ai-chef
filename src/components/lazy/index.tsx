@@ -10,13 +10,6 @@ export const LazyRecipeDetailModal = dynamic(
   }
 );
 
-export const LazyRecipeGenerator = dynamic(
-  () => import("@/components/recipes/recipe-generator").then(mod => ({ default: mod.RecipeGenerator })),
-  {
-    loading: () => <div className="bg-white rounded-lg p-6 animate-pulse"><div className="h-20 bg-gray-100 rounded" /></div>
-  }
-);
-
 export const LazyChatWidget = dynamic(
   () => import("@/components/ui/chat-widget").then(mod => ({ default: mod.ChatWidget })),
   {
