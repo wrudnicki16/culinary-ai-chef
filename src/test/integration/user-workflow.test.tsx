@@ -2,7 +2,7 @@ import { render, screen, userEvent, waitFor } from '@/test/utils'
 import { useSession } from 'next-auth/react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { mockSession, mockRecipe } from '@/test/utils'
-import { RecipeGenerator } from '@/components/recipes/recipe-generator'
+import { RecipeCreator } from '@/components/recipes/recipe-creator'
 import { RecipeCard } from '@/components/recipes/recipe-card'
 import { useState } from 'react'
 
@@ -24,7 +24,7 @@ function RecipeWorkflow() {
       <h1>Recipe Discovery</h1>
 
       <div data-testid="recipe-generator">
-        <RecipeGenerator onRecipeGenerated={handleRecipeGenerated} />
+        <RecipeCreator onRecipeGenerated={handleRecipeGenerated} />
       </div>
 
       <div data-testid="recipe-results">
@@ -113,11 +113,11 @@ describe('User Workflow Integration Tests', () => {
     render(<RecipeWorkflow />, { session: mockSession })
 
     // Step 1: User enters recipe prompt in the RecipeGenerator
-    const promptInput = screen.getByPlaceholderText(/Describe what you want to make, ingredients you have, or dietary restrictions/i)
+    const promptInput = screen.getByPlaceholderText(/ingredients you have/i)
     await user.type(promptInput, 'I want to make healthy pasta')
 
     // Step 2: User clicks generate button
-    const generateBtn = screen.getByRole('button', { name: /Generate Recipe/i })
+    const generateBtn = screen.getByRole('button', { name: /generate from description/i })
     await user.click(generateBtn)
 
     // Wait for the API call to complete
@@ -174,8 +174,8 @@ describe('User Workflow Integration Tests', () => {
 
     render(<RecipeWorkflow />, { session: mockSession })
 
-    const promptInput = screen.getByPlaceholderText(/Describe what you want to make, ingredients you have, or dietary restrictions/i)
-    const generateBtn = screen.getByRole('button', { name: /Generate Recipe/i })
+    const promptInput = screen.getByPlaceholderText(/ingredients you have/i)
+    const generateBtn = screen.getByRole('button', { name: /generate from description/i })
 
     await user.type(promptInput, 'Invalid recipe request')
     await user.click(generateBtn)
@@ -201,7 +201,7 @@ describe('User Workflow Integration Tests', () => {
     render(<RecipeWorkflow />, { session: mockSession })
 
     // Multiple interactions should maintain state in the RecipeGenerator
-    const promptInput = screen.getByPlaceholderText(/Describe what you want to make, ingredients you have, or dietary restrictions/i)
+    const promptInput = screen.getByPlaceholderText(/ingredients you have/i)
 
     await user.type(promptInput, 'Vegan pasta')
     expect(promptInput).toHaveValue('Vegan pasta')
