@@ -10,6 +10,7 @@ import { DIETARY_FILTERS } from "@/lib/utils";
 
 const DIET_INITIAL = 4;
 const CUISINE_INITIAL = 8;
+const LOAD_STEP = 10;
 
 interface GuidedRecipeModalProps {
   open: boolean;
@@ -26,8 +27,8 @@ export function GuidedRecipeModal({ open, onClose, onGenerate }: GuidedRecipeMod
   const [allergies, setAllergies] = useState<string[]>([]);
   const [cuisine, setCuisine] = useState<string>("");
   const [meal, setMeal] = useState<string>("any");
-  const [showAllDiet, setShowAllDiet] = useState(false);
-  const [showAllCuisine, setShowAllCuisine] = useState(false);
+  const [dietVisible, setDietVisible] = useState(DIET_INITIAL);
+  const [cuisineVisible, setCuisineVisible] = useState(CUISINE_INITIAL);
 
   useEffect(() => {
     if (!open) {
@@ -35,8 +36,8 @@ export function GuidedRecipeModal({ open, onClose, onGenerate }: GuidedRecipeMod
       setAllergies([]);
       setCuisine("");
       setMeal("any");
-      setShowAllDiet(false);
-      setShowAllCuisine(false);
+      setDietVisible(DIET_INITIAL);
+      setCuisineVisible(CUISINE_INITIAL);
     }
   }, [open]);
 
@@ -76,8 +77,43 @@ export function GuidedRecipeModal({ open, onClose, onGenerate }: GuidedRecipeMod
     onGenerate(buildPrompt(), filters);
   };
 
-  const dietShown = showAllDiet ? DIETARY_FILTERS.dietType : DIETARY_FILTERS.dietType.slice(0, DIET_INITIAL);
-  const cuisineShown = showAllCuisine ? DIETARY_FILTERS.cuisines : DIETARY_FILTERS.cuisines.slice(0, CUISINE_INITIAL);
+  const dietShown = DIETARY_FILTERS.dietType.slice(0, dietVisible);
+  const cuisineShown = DIETARY_FILTERS.cuisines.slice(0, cuisineVisible);
+
+  // "Load more" reveals LOAD_STEP more pills; once all are shown, "See less"
+  // collapses back to the initial count.
+  const moreControl = (
+    visible: number,
+    total: number,
+    initial: number,
+    setVisible: (n: number) => void
+  ) => {
+    if (visible < total) {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 text-xs text-gray-600"
+          onClick={() => setVisible(Math.min(visible + LOAD_STEP, total))}
+        >
+          Load more
+        </Button>
+      );
+    }
+    if (total > initial) {
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 text-xs text-gray-600"
+          onClick={() => setVisible(initial)}
+        >
+          See less
+        </Button>
+      );
+    }
+    return null;
+  };
 
   const pill = (active: boolean, label: string, onClick: () => void) => (
     <Badge
@@ -105,11 +141,7 @@ export function GuidedRecipeModal({ open, onClose, onGenerate }: GuidedRecipeMod
             <p className="text-sm font-medium text-gray-500 mb-2">Diet type</p>
             <div className="flex flex-wrap gap-2">
               {dietShown.map((f) => pill(diet.includes(f.id), f.label, () => toggle(diet, setDiet, f.id)))}
-              {!showAllDiet && (
-                <Button variant="ghost" size="sm" className="h-6 text-xs text-gray-600" onClick={() => setShowAllDiet(true)}>
-                  Load more
-                </Button>
-              )}
+              {moreControl(dietVisible, DIETARY_FILTERS.dietType.length, DIET_INITIAL, setDietVisible)}
             </div>
           </div>
 
@@ -117,11 +149,7 @@ export function GuidedRecipeModal({ open, onClose, onGenerate }: GuidedRecipeMod
             <p className="text-sm font-medium text-gray-500 mb-2">Cuisine</p>
             <div className="flex flex-wrap gap-2">
               {cuisineShown.map((f) => pill(cuisine === f.id, f.label, () => setCuisine(cuisine === f.id ? "" : f.id)))}
-              {!showAllCuisine && (
-                <Button variant="ghost" size="sm" className="h-6 text-xs text-gray-600" onClick={() => setShowAllCuisine(true)}>
-                  Load more
-                </Button>
-              )}
+              {moreControl(cuisineVisible, DIETARY_FILTERS.cuisines.length, CUISINE_INITIAL, setCuisineVisible)}
             </div>
           </div>
 

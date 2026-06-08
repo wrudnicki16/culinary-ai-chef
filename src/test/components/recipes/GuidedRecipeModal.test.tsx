@@ -40,4 +40,20 @@ describe("GuidedRecipeModal", () => {
     expect(prompt.toLowerCase()).toContain("surprise");
     expect(filters).toEqual([]);
   });
+
+  it("reveals more diet options in steps and collapses with See less", async () => {
+    const user = userEvent.setup();
+    render(<GuidedRecipeModal open onClose={() => {}} onGenerate={() => {}} />);
+
+    // The 5th diet option is hidden behind "Load more" initially.
+    expect(screen.queryByText("High Protein")).not.toBeInTheDocument();
+
+    // Diet is the first section, so its "Load more" is the first such button.
+    await user.click(screen.getAllByRole("button", { name: /load more/i })[0]);
+    expect(screen.getByText("High Protein")).toBeInTheDocument();
+
+    // Fully expanded now → "See less" collapses back to the initial 4.
+    await user.click(screen.getByRole("button", { name: /see less/i }));
+    expect(screen.queryByText("High Protein")).not.toBeInTheDocument();
+  });
 });
