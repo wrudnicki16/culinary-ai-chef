@@ -2,15 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FilterPillGroup } from "./filter-pill-group";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { DIETARY_FILTERS } from "@/lib/utils";
 
 const DIET_INITIAL = 4;
 const CUISINE_INITIAL = 8;
-const LOAD_STEP = 10;
 
 interface GuidedRecipeModalProps {
   open: boolean;
@@ -27,8 +26,6 @@ export function GuidedRecipeModal({ open, onClose, onGenerate }: GuidedRecipeMod
   const [allergies, setAllergies] = useState<string[]>([]);
   const [cuisine, setCuisine] = useState<string>("");
   const [meal, setMeal] = useState<string>("any");
-  const [dietVisible, setDietVisible] = useState(DIET_INITIAL);
-  const [cuisineVisible, setCuisineVisible] = useState(CUISINE_INITIAL);
 
   useEffect(() => {
     if (!open) {
@@ -36,8 +33,6 @@ export function GuidedRecipeModal({ open, onClose, onGenerate }: GuidedRecipeMod
       setAllergies([]);
       setCuisine("");
       setMeal("any");
-      setDietVisible(DIET_INITIAL);
-      setCuisineVisible(CUISINE_INITIAL);
     }
   }, [open]);
 
@@ -77,54 +72,6 @@ export function GuidedRecipeModal({ open, onClose, onGenerate }: GuidedRecipeMod
     onGenerate(buildPrompt(), filters);
   };
 
-  const dietShown = DIETARY_FILTERS.dietType.slice(0, dietVisible);
-  const cuisineShown = DIETARY_FILTERS.cuisines.slice(0, cuisineVisible);
-
-  // "Load more" reveals LOAD_STEP more pills; once all are shown, "See less"
-  // collapses back to the initial count.
-  const moreControl = (
-    visible: number,
-    total: number,
-    initial: number,
-    setVisible: (n: number) => void
-  ) => {
-    if (visible < total) {
-      return (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 text-xs text-gray-600"
-          onClick={() => setVisible(Math.min(visible + LOAD_STEP, total))}
-        >
-          Load more
-        </Button>
-      );
-    }
-    if (total > initial) {
-      return (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 text-xs text-gray-600"
-          onClick={() => setVisible(initial)}
-        >
-          See less
-        </Button>
-      );
-    }
-    return null;
-  };
-
-  const pill = (active: boolean, label: string, onClick: () => void) => (
-    <Badge
-      key={label}
-      variant={active ? "default" : "outline"}
-      className={active ? "cursor-pointer bg-primary hover:bg-primary/80" : "cursor-pointer hover:bg-gray-100"}
-      onClick={onClick}
-    >
-      {label}
-    </Badge>
-  );
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -139,18 +86,22 @@ export function GuidedRecipeModal({ open, onClose, onGenerate }: GuidedRecipeMod
         <div className="space-y-5">
           <div>
             <p className="text-sm font-medium text-gray-500 mb-2">Diet type</p>
-            <div className="flex flex-wrap gap-2">
-              {dietShown.map((f) => pill(diet.includes(f.id), f.label, () => toggle(diet, setDiet, f.id)))}
-              {moreControl(dietVisible, DIETARY_FILTERS.dietType.length, DIET_INITIAL, setDietVisible)}
-            </div>
+            <FilterPillGroup
+              items={DIETARY_FILTERS.dietType}
+              selectedIds={diet}
+              onToggle={(id) => toggle(diet, setDiet, id)}
+              initialCount={DIET_INITIAL}
+            />
           </div>
 
           <div>
             <p className="text-sm font-medium text-gray-500 mb-2">Cuisine</p>
-            <div className="flex flex-wrap gap-2">
-              {cuisineShown.map((f) => pill(cuisine === f.id, f.label, () => setCuisine(cuisine === f.id ? "" : f.id)))}
-              {moreControl(cuisineVisible, DIETARY_FILTERS.cuisines.length, CUISINE_INITIAL, setCuisineVisible)}
-            </div>
+            <FilterPillGroup
+              items={DIETARY_FILTERS.cuisines}
+              selectedIds={cuisine ? [cuisine] : []}
+              onToggle={(id) => setCuisine(cuisine === id ? "" : id)}
+              initialCount={CUISINE_INITIAL}
+            />
           </div>
 
           <div>
@@ -167,9 +118,11 @@ export function GuidedRecipeModal({ open, onClose, onGenerate }: GuidedRecipeMod
 
           <div>
             <p className="text-sm font-medium text-gray-500 mb-2">Allergies &amp; restrictions</p>
-            <div className="flex flex-wrap gap-2">
-              {DIETARY_FILTERS.allergies.map((f) => pill(allergies.includes(f.id), f.label, () => toggle(allergies, setAllergies, f.id)))}
-            </div>
+            <FilterPillGroup
+              items={DIETARY_FILTERS.allergies}
+              selectedIds={allergies}
+              onToggle={(id) => toggle(allergies, setAllergies, id)}
+            />
           </div>
         </div>
 

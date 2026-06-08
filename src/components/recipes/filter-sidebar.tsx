@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FilterChip } from "@/components/filters/filter-chip";
+import { FilterPillGroup } from "./filter-pill-group";
 import { DIETARY_FILTERS } from "@/lib/utils";
 
 interface FilterSidebarProps {
@@ -14,6 +14,12 @@ export function FilterSidebar({
   onFilterChange,
 }: FilterSidebarProps) {
   const [selectedFilters, setSelectedFilters] = useState<string[]>(activeFilters);
+
+  // Keep the sidebar's selection in step with externally-applied filters
+  // (e.g. removing an active-filter pill above the recommendations).
+  useEffect(() => {
+    setSelectedFilters(activeFilters);
+  }, [activeFilters]);
 
   const toggleFilter = (filterId: string) => {
     setSelectedFilters((prev) => {
@@ -44,49 +50,19 @@ export function FilterSidebar({
           <div className="space-y-5">
             <div>
               <h4 className="font-medium text-sm text-gray-500 mb-2">Diet Type</h4>
-              <div className="flex flex-wrap gap-2">
-                {DIETARY_FILTERS.dietType.map((filter) => (
-                  <FilterChip
-                    key={filter.id}
-                    id={filter.id}
-                    label={filter.label}
-                    isActive={selectedFilters.includes(filter.id)}
-                    onClick={() => toggleFilter(filter.id)}
-                  />
-                ))}
-              </div>
+              <FilterPillGroup items={DIETARY_FILTERS.dietType} selectedIds={selectedFilters} onToggle={toggleFilter} initialCount={4} />
             </div>
 
             <div>
               <h4 className="font-medium text-sm text-gray-500 mb-2">
                 Allergies & Restrictions
               </h4>
-              <div className="flex flex-wrap gap-2">
-                {DIETARY_FILTERS.allergies.map((filter) => (
-                  <FilterChip
-                    key={filter.id}
-                    id={filter.id}
-                    label={filter.label}
-                    isActive={selectedFilters.includes(filter.id)}
-                    onClick={() => toggleFilter(filter.id)}
-                  />
-                ))}
-              </div>
+              <FilterPillGroup items={DIETARY_FILTERS.allergies} selectedIds={selectedFilters} onToggle={toggleFilter} />
             </div>
 
             <div>
               <h4 className="font-medium text-sm text-gray-500 mb-2">Cuisine</h4>
-              <div className="flex flex-wrap gap-2">
-                {DIETARY_FILTERS.cuisines.map((filter) => (
-                  <FilterChip
-                    key={filter.id}
-                    id={filter.id}
-                    label={filter.label}
-                    isActive={selectedFilters.includes(filter.id)}
-                    onClick={() => toggleFilter(filter.id)}
-                  />
-                ))}
-              </div>
+              <FilterPillGroup items={DIETARY_FILTERS.cuisines} selectedIds={selectedFilters} onToggle={toggleFilter} initialCount={8} />
             </div>
           </div>
 
