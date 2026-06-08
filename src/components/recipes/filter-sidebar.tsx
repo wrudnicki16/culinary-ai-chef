@@ -42,12 +42,12 @@ export function FilterSidebar({
 
   return (
     <aside className="md:w-64 flex-shrink-0">
-      <Card className="sticky top-24">
-        <CardHeader className="pb-2">
+      <Card className="sticky top-24 md:flex md:flex-col md:max-h-[calc(100vh-7rem)]">
+        <CardHeader className="pb-2 md:shrink-0">
           <CardTitle className="text-lg">Dietary Filters</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-5">
+        <CardContent className="md:flex md:flex-col md:flex-1 md:min-h-0 md:overflow-hidden">
+          <div className="space-y-5 md:flex-1 md:min-h-0 md:overflow-y-auto md:pr-1">
             <div>
               <h4 className="font-medium text-sm text-gray-500 mb-2">Diet Type</h4>
               <FilterPillGroup items={DIETARY_FILTERS.dietType} selectedIds={selectedFilters} onToggle={toggleFilter} initialCount={4} />
@@ -62,11 +62,11 @@ export function FilterSidebar({
 
             <div>
               <h4 className="font-medium text-sm text-gray-500 mb-2">Cuisine</h4>
-              <FilterPillGroup items={DIETARY_FILTERS.cuisines} selectedIds={selectedFilters} onToggle={toggleFilter} initialCount={8} />
+              <FilterPillGroup items={DIETARY_FILTERS.cuisines} selectedIds={selectedFilters} onToggle={toggleFilter} initialCount={7} />
             </div>
           </div>
 
-          <div className="mt-6 pt-5 border-t border-gray-200">
+          <div className="mt-6 pt-5 border-t border-gray-200 md:mt-4 md:pt-4 md:shrink-0">
             <Button
               className="w-full bg-primary hover:bg-primary/90 text-white"
               onClick={handleApplyFilters}
