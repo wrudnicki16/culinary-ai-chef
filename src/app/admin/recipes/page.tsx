@@ -15,6 +15,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { dietaryTagLabel, visibleDietaryTags } from "@/lib/dietary-tags";
 import { 
   Dialog, 
   DialogContent, 
@@ -176,14 +177,14 @@ export default function AdminRecipes() {
                             <TableCell>{recipe.title}</TableCell>
                             <TableCell>
                               <div className="flex flex-wrap gap-1">
-                                {recipe.dietaryTags.slice(0, 2).map((tag) => (
+                                {visibleDietaryTags(recipe.dietaryTags).slice(0, 2).map((tag) => (
                                   <Badge key={tag} variant="outline" className="text-xs">
-                                    {tag}
+                                    {dietaryTagLabel(tag)}
                                   </Badge>
                                 ))}
-                                {recipe.dietaryTags.length > 2 && (
+                                {visibleDietaryTags(recipe.dietaryTags).length > 2 && (
                                   <Badge variant="outline" className="text-xs">
-                                    +{recipe.dietaryTags.length - 2}
+                                    +{visibleDietaryTags(recipe.dietaryTags).length - 2}
                                   </Badge>
                                 )}
                               </div>

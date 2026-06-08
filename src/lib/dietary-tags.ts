@@ -35,3 +35,15 @@ export function dietaryTagLabel(tag: string): string {
 export function mergeDietaryTags(existing: string[], requested: string[]): string[] {
   return Array.from(new Set([...existing, ...requested].map(toDietaryTagId)));
 }
+
+const CUISINE_IDS = new Set(DIETARY_FILTERS.cuisines.map((c) => c.id));
+
+/** True if a tag is a cuisine. Cuisines are hidden from recipe tag pills. */
+export function isCuisineTag(tag: string): boolean {
+  return CUISINE_IDS.has(toDietaryTagId(tag));
+}
+
+/** A recipe's tags with cuisines removed — diet/allergen info we surface on cards/modals/admin. */
+export function visibleDietaryTags(tags: string[]): string[] {
+  return tags.filter((tag) => !isCuisineTag(tag));
+}

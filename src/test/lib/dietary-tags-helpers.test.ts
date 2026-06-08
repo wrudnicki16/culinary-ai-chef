@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { toDietaryTagId, dietaryTagLabel, mergeDietaryTags } from "@/lib/dietary-tags";
+import { toDietaryTagId, dietaryTagLabel, mergeDietaryTags, isCuisineTag, visibleDietaryTags } from "@/lib/dietary-tags";
 
 describe("toDietaryTagId", () => {
   it("normalizes labels and casing to the canonical id", () => {
@@ -39,5 +39,20 @@ describe("mergeDietaryTags", () => {
   it("keeps unknown LLM tags", () => {
     expect(mergeDietaryTags(["Contains Allergens"], ["italian"]))
       .toEqual(expect.arrayContaining(["Contains Allergens", "italian"]));
+  });
+});
+
+describe("isCuisineTag / visibleDietaryTags", () => {
+  it("identifies cuisines (by id or label) and not diet/allergen tags", () => {
+    expect(isCuisineTag("italian")).toBe(true);
+    expect(isCuisineTag("Italian")).toBe(true);
+    expect(isCuisineTag("mediterranean")).toBe(true);
+    expect(isCuisineTag("vegetarian")).toBe(false);
+    expect(isCuisineTag("dairy")).toBe(false);
+    expect(isCuisineTag("Contains Allergens")).toBe(false);
+  });
+  it("filters cuisines out, keeping diet/allergen/unknown tags", () => {
+    expect(visibleDietaryTags(["vegetarian", "italian", "dairy", "Contains Allergens"]))
+      .toEqual(["vegetarian", "dairy", "Contains Allergens"]);
   });
 });

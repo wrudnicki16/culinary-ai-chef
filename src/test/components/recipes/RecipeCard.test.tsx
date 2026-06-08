@@ -30,10 +30,18 @@ describe('RecipeCard Component', () => {
   })
 
   it('should display canonical id tags as human labels', () => {
-    const recipe = { ...mockRecipe, dietaryTags: ['italian'] }
+    const recipe = { ...mockRecipe, dietaryTags: ['glutenFree'] }
     render(<RecipeCard recipe={recipe} onClick={mockOnClick} />)
 
-    expect(screen.getByText('Italian')).toBeInTheDocument()
+    expect(screen.getByText('Gluten-Free')).toBeInTheDocument()
+  })
+
+  it('should hide cuisine tags, keeping diet/allergen tags', () => {
+    const recipe = { ...mockRecipe, dietaryTags: ['vegetarian', 'italian'] }
+    render(<RecipeCard recipe={recipe} onClick={mockOnClick} />)
+
+    expect(screen.getByText('Vegetarian')).toBeInTheDocument()
+    expect(screen.queryByText('Italian')).not.toBeInTheDocument()
   })
 
   it('should show AI generated badge when applicable', () => {

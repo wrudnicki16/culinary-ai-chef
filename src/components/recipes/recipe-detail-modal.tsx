@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { deriveServingNutrition } from "@/lib/portion-scaling";
 import { Recipe, Comment } from "@/lib/types";
-import { dietaryTagLabel } from "@/lib/dietary-tags";
+import { dietaryTagLabel, visibleDietaryTags } from "@/lib/dietary-tags";
 import { SAMPLE_RECIPE_IMAGES } from "@/lib/utils";
 import { FormattedText } from "@/components/ui/formatted-text";
 import { Textarea } from "@/components/ui/textarea";
@@ -152,7 +152,7 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
             <div className="flex items-center justify-between gap-2 text-white flex-wrap">
               {/* Allergen / dietary pills — left */}
               <div className="flex items-center gap-2 flex-wrap" data-testid="allergen-pills">
-                {recipe.dietaryTags.slice(0, 3).map(tag => (
+                {visibleDietaryTags(recipe.dietaryTags).slice(0, 3).map(tag => (
                   <Badge
                     key={tag}
                     className="bg-primary text-white text-xs px-2 py-0.5 rounded-full"

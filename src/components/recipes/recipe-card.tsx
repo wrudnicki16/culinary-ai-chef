@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Rating } from "@/components/ui/rating";
 import { cn, SAMPLE_RECIPE_IMAGES } from "@/lib/utils";
 import { Recipe } from "@/lib/types";
-import { dietaryTagLabel } from "@/lib/dietary-tags";
+import { dietaryTagLabel, visibleDietaryTags } from "@/lib/dietary-tags";
 import { FormattedText } from "@/components/ui/formatted-text";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,6 +21,7 @@ interface RecipeCardProps {
 export function RecipeCard({ recipe, onClick, className }: RecipeCardProps) {
   const [isFavorite, setIsFavorite] = useState(recipe.isFavorited || false);
   const { toast } = useToast();
+  const visibleTags = visibleDietaryTags(recipe.dietaryTags);
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -130,7 +131,7 @@ export function RecipeCard({ recipe, onClick, className }: RecipeCardProps) {
         <div className="flex justify-between items-center">
           <Rating value={recipe.rating} count={recipe.ratingCount} />
           <div className="flex flex-wrap gap-1">
-            {recipe.dietaryTags.slice(0, 2).map((tag) => {
+            {visibleTags.slice(0, 2).map((tag) => {
               const label = dietaryTagLabel(tag);
               return (
                 <Badge
@@ -149,9 +150,9 @@ export function RecipeCard({ recipe, onClick, className }: RecipeCardProps) {
                 </Badge>
               );
             })}
-            {recipe.dietaryTags.length > 2 && (
+            {visibleTags.length > 2 && (
               <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full bg-gray-100">
-                +{recipe.dietaryTags.length - 2}
+                +{visibleTags.length - 2}
               </Badge>
             )}
           </div>
