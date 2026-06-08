@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { DIETARY_FILTERS } from "@/lib/utils";
 
 const DIET_INITIAL = 4;
-const CUISINE_INITIAL = 8;
+const CUISINE_INITIAL = 7;
 
 interface GuidedRecipeModalProps {
   open: boolean;

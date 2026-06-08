@@ -14,7 +14,7 @@ describe("FilterSidebar", () => {
   it("collapses the cuisine list behind Load more", async () => {
     const user = userEvent.setup();
     render(<FilterSidebar activeFilters={[]} onFilterChange={() => {}} />);
-    // Cuisine shows its first 8 (mediterranean…greek); "Turkish" (index 8) is hidden.
+    // Cuisine shows its first 7 (mediterranean…french); "Turkish" (index 8) is hidden.
     expect(screen.queryByRole("button", { name: "Turkish" })).not.toBeInTheDocument();
     // Load-more buttons in DOM order: [0] = Diet, [1] = Cuisine — click Cuisine's.
     await user.click(screen.getAllByRole("button", { name: /load more/i })[1]);
