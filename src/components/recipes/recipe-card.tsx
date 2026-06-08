@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Rating } from "@/components/ui/rating";
 import { cn, SAMPLE_RECIPE_IMAGES } from "@/lib/utils";
 import { Recipe } from "@/lib/types";
+import { dietaryTagLabel } from "@/lib/dietary-tags";
 import { FormattedText } from "@/components/ui/formatted-text";
 import { useToast } from "@/hooks/use-toast";
 
@@ -129,23 +130,25 @@ export function RecipeCard({ recipe, onClick, className }: RecipeCardProps) {
         <div className="flex justify-between items-center">
           <Rating value={recipe.rating} count={recipe.ratingCount} />
           <div className="flex flex-wrap gap-1">
-            {recipe.dietaryTags.slice(0, 2).map((tag) => (
-              <Badge 
-                key={tag} 
-                variant="outline" 
-                className={cn(
-                  "text-xs px-2 py-0.5 rounded-full",
-                  tag === "High Protein" && "bg-primary-100 text-primary-800",
-                  tag === "Vegetarian" && "bg-blue-100 text-blue-800",
-                  tag === "Vegan" && "bg-purple-100 text-purple-800",
-                  tag === "Gluten Free" && "bg-green-100 text-green-800",
-                  tag === "Heart Healthy" && "bg-red-100 text-red-800",
-                  tag === "Low Carb" && "bg-yellow-100 text-yellow-800",
-                )}
-              >
-                {tag}
-              </Badge>
-            ))}
+            {recipe.dietaryTags.slice(0, 2).map((tag) => {
+              const label = dietaryTagLabel(tag);
+              return (
+                <Badge
+                  key={tag}
+                  variant="outline"
+                  className={cn(
+                    "text-xs px-2 py-0.5 rounded-full",
+                    label === "High Protein" && "bg-primary-100 text-primary-800",
+                    label === "Vegetarian" && "bg-blue-100 text-blue-800",
+                    label === "Vegan" && "bg-purple-100 text-purple-800",
+                    label === "Gluten-Free" && "bg-green-100 text-green-800",
+                    label === "Low Carb" && "bg-yellow-100 text-yellow-800",
+                  )}
+                >
+                  {label}
+                </Badge>
+              );
+            })}
             {recipe.dietaryTags.length > 2 && (
               <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-full bg-gray-100">
                 +{recipe.dietaryTags.length - 2}

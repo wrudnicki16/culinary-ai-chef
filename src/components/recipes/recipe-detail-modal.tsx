@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { deriveServingNutrition } from "@/lib/portion-scaling";
 import { Recipe, Comment } from "@/lib/types";
+import { dietaryTagLabel } from "@/lib/dietary-tags";
 import { SAMPLE_RECIPE_IMAGES } from "@/lib/utils";
 import { FormattedText } from "@/components/ui/formatted-text";
 import { Textarea } from "@/components/ui/textarea";
@@ -156,7 +157,7 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
                     key={tag}
                     className="bg-primary text-white text-xs px-2 py-0.5 rounded-full"
                   >
-                    {tag}
+                    {dietaryTagLabel(tag)}
                   </Badge>
                 ))}
               </div>

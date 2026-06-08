@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { Ingredient, NutritionInfo } from "./types";
 import { analyzeNutritionWithEdamam } from "./edamam";
 import { scaleRecipePortions } from "./portion-scaling";
+import { mergeDietaryTags } from "./dietary-tags";
 
 // Configure OpenAI models from environment variables
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-2024-11-20";
@@ -815,6 +816,7 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
       recipeData.nutritionInfo = edamamNutrition;
     }
 
+    recipeData.dietaryTags = mergeDietaryTags(recipeData.dietaryTags, dietaryFilters);
     scaleRecipePortions(recipeData, targetServings);
 
     return {
@@ -849,6 +851,7 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
         if (edamamNutrition) {
           recipeData.nutritionInfo = edamamNutrition;
         }
+        recipeData.dietaryTags = mergeDietaryTags(recipeData.dietaryTags, dietaryFilters);
         scaleRecipePortions(recipeData, targetServings);
         return { ...recipeData, imageUrl: null };
       } catch (fallbackError) {

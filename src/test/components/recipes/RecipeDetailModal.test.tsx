@@ -35,7 +35,7 @@ const recipe: Recipe = {
 describe('RecipeDetailModal servings control', () => {
   it('renders allergen pills, a servings control, and base per-serving macros', () => {
     render(<RecipeDetailModal recipe={recipe} open={true} onClose={() => {}} />)
-    expect(screen.getByText('Gluten Free')).toBeInTheDocument()
+    expect(screen.getByText('Gluten-Free')).toBeInTheDocument()
     expect(screen.getByLabelText('Servings')).toBeInTheDocument()
     expect(screen.getByText('500')).toBeInTheDocument() // base per-serving calories
   })

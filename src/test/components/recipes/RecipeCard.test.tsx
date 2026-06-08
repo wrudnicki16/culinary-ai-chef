@@ -1,6 +1,7 @@
 import { render, screen, userEvent } from '@/test/utils'
 import { RecipeCard } from '@/components/recipes/recipe-card'
 import { mockRecipe } from '@/test/utils'
+import { dietaryTagLabel } from '@/lib/dietary-tags'
 
 describe('RecipeCard Component', () => {
   const mockOnClick = vi.fn()
@@ -24,8 +25,15 @@ describe('RecipeCard Component', () => {
     render(<RecipeCard recipe={mockRecipe} onClick={mockOnClick} />)
 
     mockRecipe.dietaryTags.forEach(tag => {
-      expect(screen.getByText(tag)).toBeInTheDocument()
+      expect(screen.getByText(dietaryTagLabel(tag))).toBeInTheDocument()
     })
+  })
+
+  it('should display canonical id tags as human labels', () => {
+    const recipe = { ...mockRecipe, dietaryTags: ['italian'] }
+    render(<RecipeCard recipe={recipe} onClick={mockOnClick} />)
+
+    expect(screen.getByText('Italian')).toBeInTheDocument()
   })
 
   it('should show AI generated badge when applicable', () => {
