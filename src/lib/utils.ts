@@ -22,7 +22,6 @@ export const DIETARY_FILTERS = {
     { id: "glutenFree", label: "Gluten-Free" },
     { id: "highProtein", label: "High Protein" },
     { id: "paleo", label: "Paleo" },
-    { id: "lowCarb", label: "Low Carb" },
     { id: "whole30", label: "Whole30" },
     { id: "pescatarian", label: "Pescatarian" },
     { id: "noRedMeat", label: "No Red Meat" },

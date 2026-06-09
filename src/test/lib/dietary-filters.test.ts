@@ -9,7 +9,7 @@ describe("DIETARY_FILTERS taxonomy", () => {
       "vegetarian", "vegan", "keto", "glutenFree",
     ]);
     expect(ids(DIETARY_FILTERS.dietType)).toEqual(expect.arrayContaining([
-      "highProtein", "paleo", "lowCarb", "whole30", "pescatarian",
+      "highProtein", "paleo", "whole30", "pescatarian",
       "noRedMeat", "dash", "lowSodium", "diabetic",
     ]));
   });
