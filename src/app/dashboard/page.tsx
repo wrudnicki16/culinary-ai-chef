@@ -11,7 +11,7 @@ import { RecipeCard } from "@/components/recipes/recipe-card";
 import { RecipeDetailModal } from "@/components/recipes/recipe-detail-modal";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Recipe, User } from "@/lib/types";
-import { User as UserIcon, Settings, ShoppingCart, Heart, History, ChevronLeft } from "lucide-react";
+import { ShoppingCart, Heart, History, ChevronLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -103,81 +103,32 @@ export default function Dashboard() {
       <main className="flex-1 py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-6">
-            <Link href="/" className="text-gray-500 hover:text-gray-900 flex items-center mb-4">
+            <Link href="/" className="text-gray-500 hover:text-gray-900 inline-flex items-center mb-4 w-fit">
               <ChevronLeft className="w-4 h-4 mr-1" />
               Back to recipes
             </Link>
-            <h1 className="text-3xl font-bold">Your Dashboard</h1>
-            <p className="text-gray-600 mt-2">Manage your recipes, preferences, and account settings</p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold">Your Dashboard</h1>
+                <p className="text-gray-600 mt-2">Manage your recipes, preferences, and account settings</p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="h-10 w-10 rounded-full overflow-hidden">
+                  <img
+                    src={user?.image || "https://github.com/shadcn.png"}
+                    alt="Profile"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div>
+                  <p className="font-medium">{user?.name || "User"}</p>
+                  <p className="text-sm text-gray-500">{user?.email}</p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Sidebar */}
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <div className="h-12 w-12 rounded-full overflow-hidden">
-                    <img
-                      src={user?.image || "https://github.com/shadcn.png"}
-                      alt="Profile"
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <CardTitle>{user?.name || "User"}</CardTitle>
-                    <CardDescription>{user?.email}</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-1">
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start ${activeTab === "saved" ? "bg-primary/10 text-primary" : ""}`}
-                    onClick={() => setActiveTab("saved")}
-                  >
-                    <Heart className="mr-2 h-4 w-4" />
-                    Saved Recipes
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start ${activeTab === "generated" ? "bg-primary/10 text-primary" : ""}`}
-                    onClick={() => setActiveTab("generated")}
-                  >
-                    <History className="mr-2 h-4 w-4" />
-                    Generated History
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start ${activeTab === "grocery" ? "bg-primary/10 text-primary" : ""}`}
-                    onClick={() => setActiveTab("grocery")}
-                  >
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    Grocery List
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start ${activeTab === "profile" ? "bg-primary/10 text-primary" : ""}`}
-                    onClick={() => setActiveTab("profile")}
-                  >
-                    <UserIcon className="mr-2 h-4 w-4" />
-                    Profile
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className={`w-full justify-start ${activeTab === "settings" ? "bg-primary/10 text-primary" : ""}`}
-                    onClick={() => setActiveTab("settings")}
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Main Content */}
-            <div className="lg:col-span-3">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid grid-cols-5 mb-8">
                   <TabsTrigger value="saved">Saved</TabsTrigger>
                   <TabsTrigger value="generated">Generated</TabsTrigger>
@@ -439,9 +390,7 @@ export default function Dashboard() {
                     </CardContent>
                   </Card>
                 </TabsContent>
-              </Tabs>
-            </div>
-          </div>
+          </Tabs>
         </div>
       </main>
       <Footer />

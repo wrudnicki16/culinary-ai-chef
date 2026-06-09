@@ -49,6 +49,10 @@ vi.mock('@tanstack/react-query', () => ({
     setQueryData: vi.fn(),
   })),
   QueryClientProvider: ({ children }: { children: React.ReactNode }) => children,
+  useQueryClient: vi.fn(() => ({
+    invalidateQueries: vi.fn(),
+    setQueryData: vi.fn(),
+  })),
 }))
 
 // Mock environment variables
