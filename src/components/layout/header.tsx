@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
-import { Heart, Bookmark, ChevronDown, Utensils } from "lucide-react";
+import { Heart, ChevronDown, Utensils } from "lucide-react";
 
 export function Header() {
   const { user, isAuthenticated } = useAuth();
@@ -37,19 +37,10 @@ export function Header() {
           <div className="flex items-center space-x-4">
             {isAuthenticated && (
               <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hidden md:flex hover:text-primary"
-                >
-                  <Heart className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hidden md:flex hover:text-primary"
-                >
-                  <Bookmark className="h-5 w-5" />
+                <Button asChild variant="ghost" size="icon" className="hidden md:flex hover:text-primary">
+                  <Link href="/dashboard" aria-label="Saved recipes">
+                    <Heart className="h-5 w-5" />
+                  </Link>
                 </Button>
 
                 <DropdownMenu>
