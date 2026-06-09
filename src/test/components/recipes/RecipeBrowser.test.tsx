@@ -48,6 +48,23 @@ describe("RecipeBrowser", () => {
     await waitFor(() => expect(screen.getByText("Eggplant Parmesan")).toBeInTheDocument());
   });
 
+  it("shows a clear button when the search has text and clears it on click", async () => {
+    const user = userEvent.setup();
+    render(
+      <RecipeBrowser
+        params={{ search: "eggplant", filters: [], sort: "popular" }}
+        onParamsChange={() => {}}
+        onRecipeClick={() => {}}
+        showSearch
+      />
+    );
+    const input = screen.getByLabelText("Search recipes");
+    expect(input).toHaveValue("eggplant");
+    await user.click(screen.getByLabelText("Clear search"));
+    expect(input).toHaveValue("");
+    expect(screen.queryByLabelText("Clear search")).not.toBeInTheDocument();
+  });
+
   it("calls onRecipeClick when a card is clicked", async () => {
     const onRecipeClick = vi.fn();
     const user = userEvent.setup();

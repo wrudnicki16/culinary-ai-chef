@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronDown, Search, Sliders } from "lucide-react";
+import { ChevronDown, Search, Sliders, X } from "lucide-react";
 import { RecipeCard } from "@/components/recipes/recipe-card";
 import { FilterSidebar } from "@/components/recipes/filter-sidebar";
 import { FilterChip } from "@/components/filters/filter-chip";
@@ -122,10 +122,20 @@ export function RecipeBrowser({ params, onParamsChange, onRecipeClick, showSearc
                 <Input
                   value={searchInput}
                   placeholder="Search by ingredient, cuisine, or dish…"
-                  className="pl-9"
+                  className="pl-9 pr-9"
                   aria-label="Search recipes"
                   onChange={(e) => { setSearchInput(e.target.value); pushSearch(e.target.value); }}
                 />
+                {searchInput && (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={() => { setSearchInput(""); pushSearch(""); }}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
               <span className="text-sm text-gray-500 whitespace-nowrap">{data?.total ?? 0} results</span>
             </div>
