@@ -34,7 +34,7 @@ function SearchPageContent() {
 
   return (
     <>
-      <Link href="/" className="text-gray-500 hover:text-gray-900 flex items-center mb-4">
+      <Link href="/" className="text-gray-500 hover:text-gray-900 inline-flex items-center mb-4 w-fit">
         <ChevronLeft className="w-4 h-4 mr-1" /> Back to home
       </Link>
       <h1 className="text-2xl font-bold mb-5">Search recipes</h1>
