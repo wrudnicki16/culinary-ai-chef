@@ -18,17 +18,18 @@ Phase 1 redesigned the home page (guided/custom generation + relocated browse fi
 ### `RecipeBrowser` (new) — `src/components/recipes/recipe-browser.tsx`
 A controlled client component that encapsulates everything the home "Recommended For You" section does today:
 - the `/api/recipes` query (search, filters, sort, page, pageSize),
-- the `allRecipes` accumulation across pages **and the Phase-1 pagination fixes** (the `isInitialMount` reset-guard and the `recipes = allRecipes.length ? allRecipes : data?.recipes ?? []` fallback),
+- the `allRecipes` accumulation across pages **and the Phase-1 pagination fixes** (the `isInitialMount` reset-guard and the `recipes = allRecipes.length ? allRecipes : data?.recipes ?? []` fallback) — page/accumulation is **internal** (not in the URL); changing search/filters/sort resets it to page 1,
 - the active-filter pills, the sort `Select`, the `FilterSidebar`,
 - the `RecipeCard` grid + Load More, and opening the `RecipeDetailModal`.
 
 **Props (controlled):**
 ```ts
-interface RecipeBrowserParams { search: string; filters: string[]; sort: string; page: number; }
+interface RecipeBrowserParams { search: string; filters: string[]; sort: string; }
 interface RecipeBrowserProps {
-  params: RecipeBrowserParams;
+  params: RecipeBrowserParams;                    // the query inputs (search/filters/sort) — controlled
   onParamsChange: (next: RecipeBrowserParams) => void;
-  showSearch?: boolean;   // render the search input + result count (search page); home omits it
+  onRecipeClick: (recipe: Recipe) => void;        // parent owns the detail modal (reused by generation on home)
+  showSearch?: boolean;                           // render the search input + result count (search page); home omits it
 }
 ```
 - The component reads `params` and renders the UI; every user action (apply filters, change sort, type in search, remove a pill, Load More) calls `onParamsChange` with the next params. Changing search/filters/sort resets `page` to 1; Load More increments `page`.
@@ -42,7 +43,7 @@ interface RecipeBrowserProps {
 
 ### Search page — `src/app/search/page.tsx` (new route `/search`)
 A client page that:
-- derives `RecipeBrowserParams` from `useSearchParams` — `q` → `search`, `filters` (comma-separated ids) → `filters[]`, `sort`, `page`;
+- derives `RecipeBrowserParams` from `useSearchParams` — `q` → `search`, `filters` (comma-separated ids) → `filters[]`, `sort`. (`page` is **not** in the URL this iteration — see Out of scope.);
 - on change, writes them back to the URL with `router.replace` (debounced for `q` so typing doesn't spam history);
 - renders `Header` → a **"← Back to home"** link (page chrome, links to `/`) → `<RecipeBrowser params={...} onParamsChange={writeToUrl} showSearch />` → `Footer`. No hero image, no generator.
 - Wraps the URL-reading content in `<Suspense>` (Next.js App Router requires a Suspense boundary around `useSearchParams`).
@@ -54,7 +55,7 @@ The **page URL** uses a readable comma-separated `filters` (`?filters=vegetarian
 `FilterSidebar`, `RecipeCard`, `RecipeDetailModal`, the `/api/recipes` route + `storage.getAllRecipes` (incl. the sort fix), and the Phase-1 pagination fixes are all reused — the fixes now live in one place (`RecipeBrowser`).
 
 ## Out of scope (noted for later)
-- **Infinite scroll** — deliberately deferred; Load More stays. When added, it slots into `RecipeBrowser` and benefits both pages.
+- **Infinite scroll** — deliberately deferred; Load More stays. When added, it slots into `RecipeBrowser` and benefits both pages. A **`page` URL param** (deep-linkable scroll depth) is deferred together with it — for now `page`/accumulation is internal and resets on load, while `q`/`filters`/`sort` remain shareable.
 - No global search added to the `Header` nav; the entry points remain the home hero and the `/search` page itself.
 - No backfill of existing recipes' tags (tracked separately).
 
