@@ -2,10 +2,10 @@ import Image from "next/image";
 import { SearchSection } from "./search-section";
 
 interface HeroSectionProps {
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSearchSubmit: (query: string) => void;
 }
 
-export function HeroSection({ onSearchChange }: HeroSectionProps) {
+export function HeroSection({ onSearchSubmit }: HeroSectionProps) {
   return (
     <section className="rounded-2xl overflow-hidden mb-8 relative">
       <div className="h-64 md:h-80 bg-gray-200 relative">
@@ -26,7 +26,7 @@ export function HeroSection({ onSearchChange }: HeroSectionProps) {
             Get personalized recipe recommendations based on your dietary
             preferences and available ingredients.
           </p>
-          <SearchSection onSearchChange={onSearchChange} />
+          <SearchSection onSearchSubmit={onSearchSubmit} />
         </div>
       </div>
     </section>
