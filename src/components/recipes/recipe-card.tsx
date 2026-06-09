@@ -97,13 +97,14 @@ export function RecipeCard({ recipe, onClick, className }: RecipeCardProps) {
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Save recipe"
             className="bg-white rounded-full p-1 shadow hover:bg-gray-100"
             onClick={handleFavoriteClick}
           >
             <Heart
               className={cn(
                 "h-5 w-5",
-                isFavorite ? "fill-secondary-500 text-secondary-500" : "text-gray-400"
+                isFavorite ? "fill-red-500 text-red-500" : "text-gray-400"
               )}
             />
           </Button>
@@ -128,7 +129,7 @@ export function RecipeCard({ recipe, onClick, className }: RecipeCardProps) {
         <p className="text-sm text-gray-600 line-clamp-2 mb-3">
           <FormattedText text={recipe.description} />
         </p>
-        <div className="flex justify-between items-center">
+        <div className="space-y-2">
           <Rating value={recipe.rating} count={recipe.ratingCount} />
           <div className="flex flex-wrap gap-1">
             {visibleTags.slice(0, 2).map((tag) => {
@@ -143,7 +144,6 @@ export function RecipeCard({ recipe, onClick, className }: RecipeCardProps) {
                     label === "Vegetarian" && "bg-blue-100 text-blue-800",
                     label === "Vegan" && "bg-purple-100 text-purple-800",
                     label === "Gluten-Free" && "bg-green-100 text-green-800",
-                    label === "Low Carb" && "bg-yellow-100 text-yellow-800",
                   )}
                 >
                   {label}

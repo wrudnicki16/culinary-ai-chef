@@ -112,4 +112,11 @@ describe('RecipeCard Component', () => {
     expect(screen.queryByText(/Verified/i)).not.toBeInTheDocument()
     expect(screen.getByText(mockRecipe.title)).toBeInTheDocument()
   })
+
+  it('fills the favorite heart red when the recipe is favorited', () => {
+    const favorited = { ...mockRecipe, isFavorited: true }
+    render(<RecipeCard recipe={favorited} onClick={mockOnClick} />)
+    const saveBtn = screen.getByRole('button', { name: /save recipe/i })
+    expect(saveBtn.querySelector('svg')?.getAttribute('class')).toContain('fill-red-500')
+  })
 })
