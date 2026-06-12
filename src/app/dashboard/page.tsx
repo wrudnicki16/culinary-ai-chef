@@ -147,13 +147,13 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       {isLoadingSaved ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {[...Array(4)].map((_, i) => (
                             <div key={i} className="bg-gray-100 rounded-lg h-48 animate-pulse" />
                           ))}
                         </div>
                       ) : savedRecipes && savedRecipes.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {savedRecipes.map(recipe => (
                             <RecipeCard
                               key={recipe.id}
@@ -188,13 +188,13 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       {isLoadingGenerated ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {[...Array(4)].map((_, i) => (
                             <div key={i} className="bg-gray-100 rounded-lg h-48 animate-pulse" />
                           ))}
                         </div>
                       ) : generatedRecipes && generatedRecipes.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {generatedRecipes.map(recipe => (
                             <RecipeCard
                               key={recipe.id}
