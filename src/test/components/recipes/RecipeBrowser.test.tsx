@@ -2,6 +2,8 @@ import { render, screen, waitFor, userEvent } from "@/test/utils";
 import { RecipeBrowser } from "@/components/recipes/recipe-browser";
 import type { Recipe } from "@/lib/types";
 import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
+import { mockSession, mockRecipe } from "@/test/utils";
 
 beforeAll(() => {
   (global as unknown as Record<string, unknown>).ResizeObserver =
@@ -63,6 +65,29 @@ describe("RecipeBrowser", () => {
     await user.click(screen.getByLabelText("Clear search"));
     expect(input).toHaveValue("");
     expect(screen.queryByLabelText("Clear search")).not.toBeInTheDocument();
+  });
+
+  it("calls onRecipeRate when an authenticated user clicks a card star", async () => {
+    vi.mocked(useSession).mockReturnValue({ data: mockSession, status: "authenticated" } as never);
+    vi.mocked(useQuery).mockReturnValue({
+      data: { recipes: [mockRecipe], total: 1 },
+      isLoading: false,
+      error: null,
+      isFetching: false,
+      refetch: vi.fn(),
+    } as never);
+    const onRecipeRate = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <RecipeBrowser
+        params={{ search: "", filters: [], sort: "popular" }}
+        onParamsChange={() => {}}
+        onRecipeClick={() => {}}
+        onRecipeRate={onRecipeRate}
+      />
+    );
+    await user.click(screen.getByRole("button", { name: "Rate 3 stars" }));
+    expect(onRecipeRate).toHaveBeenCalledWith(mockRecipe, 3);
   });
 
   it("calls onRecipeClick when a card is clicked", async () => {

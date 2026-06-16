@@ -17,8 +17,17 @@ export default function Home() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [pendingRating, setPendingRating] = useState<number | undefined>(undefined);
+
   const openRecipe = (recipe: Recipe) => {
     setSelectedRecipe(recipe);
+    setPendingRating(undefined);
+    setIsModalOpen(true);
+  };
+
+  const rateRecipe = (recipe: Recipe, rating: number) => {
+    setSelectedRecipe(recipe);
+    setPendingRating(rating);
     setIsModalOpen(true);
   };
 
@@ -33,7 +42,7 @@ export default function Home() {
 
           <section>
             <h2 className="text-xl font-heading font-semibold mb-5">Recommended For You</h2>
-            <RecipeBrowser params={params} onParamsChange={setParams} onRecipeClick={openRecipe} />
+            <RecipeBrowser params={params} onParamsChange={setParams} onRecipeClick={openRecipe} onRecipeRate={rateRecipe} />
           </section>
         </div>
       </main>
@@ -41,7 +50,12 @@ export default function Home() {
       <ChatWidget />
       <Footer />
 
-      <RecipeDetailModal recipe={selectedRecipe} open={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <RecipeDetailModal
+        recipe={selectedRecipe}
+        open={isModalOpen}
+        initialRating={pendingRating}
+        onClose={() => { setIsModalOpen(false); setPendingRating(undefined); }}
+      />
     </div>
   );
 }

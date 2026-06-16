@@ -22,6 +22,13 @@ function SearchPageContent() {
 
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pendingRating, setPendingRating] = useState<number | undefined>(undefined);
+
+  const rateRecipe = (recipe: Recipe, rating: number) => {
+    setSelectedRecipe(recipe);
+    setPendingRating(rating);
+    setIsModalOpen(true);
+  };
 
   const writeParams = (next: RecipeBrowserParams) => {
     const sp = new URLSearchParams();
@@ -41,10 +48,11 @@ function SearchPageContent() {
       <RecipeBrowser
         params={params}
         onParamsChange={writeParams}
-        onRecipeClick={(r) => { setSelectedRecipe(r); setIsModalOpen(true); }}
+        onRecipeClick={(r) => { setSelectedRecipe(r); setPendingRating(undefined); setIsModalOpen(true); }}
+        onRecipeRate={rateRecipe}
         showSearch
       />
-      <RecipeDetailModal recipe={selectedRecipe} open={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <RecipeDetailModal recipe={selectedRecipe} open={isModalOpen} initialRating={pendingRating} onClose={() => { setIsModalOpen(false); setPendingRating(undefined); }} />
     </>
   );
 }

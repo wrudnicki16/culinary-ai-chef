@@ -88,13 +88,23 @@ export default function Dashboard() {
     }
   };
 
+  const [pendingRating, setPendingRating] = useState<number | undefined>(undefined);
+
   const openRecipeDetails = (recipe: Recipe) => {
     setSelectedRecipe(recipe);
+    setPendingRating(undefined);
+    setIsModalOpen(true);
+  };
+
+  const rateRecipe = (recipe: Recipe, rating: number) => {
+    setSelectedRecipe(recipe);
+    setPendingRating(rating);
     setIsModalOpen(true);
   };
 
   const closeRecipeDetails = () => {
     setIsModalOpen(false);
+    setPendingRating(undefined);
   };
 
   return (
@@ -159,6 +169,7 @@ export default function Dashboard() {
                               key={recipe.id}
                               recipe={recipe}
                               onClick={() => openRecipeDetails(recipe)}
+                              onRate={(r) => rateRecipe(recipe, r)}
                             />
                           ))}
                         </div>
@@ -200,6 +211,7 @@ export default function Dashboard() {
                               key={recipe.id}
                               recipe={recipe}
                               onClick={() => openRecipeDetails(recipe)}
+                              onRate={(r) => rateRecipe(recipe, r)}
                             />
                           ))}
                         </div>
@@ -398,6 +410,7 @@ export default function Dashboard() {
       <RecipeDetailModal
         recipe={selectedRecipe}
         open={isModalOpen}
+        initialRating={pendingRating}
         onClose={closeRecipeDetails}
       />
     </div>

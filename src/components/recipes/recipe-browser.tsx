@@ -23,6 +23,7 @@ interface RecipeBrowserProps {
   params: RecipeBrowserParams;
   onParamsChange: (next: RecipeBrowserParams) => void;
   onRecipeClick: (recipe: Recipe) => void;
+  onRecipeRate?: (recipe: Recipe, rating: number) => void;
   showSearch?: boolean;
 }
 
@@ -36,7 +37,7 @@ function filterLabel(id: string): string {
   return id;
 }
 
-export function RecipeBrowser({ params, onParamsChange, onRecipeClick, showSearch }: RecipeBrowserProps) {
+export function RecipeBrowser({ params, onParamsChange, onRecipeClick, onRecipeRate, showSearch }: RecipeBrowserProps) {
   const { search, filters, sort } = params;
   const filterKey = filters.join(",");
 
@@ -184,7 +185,11 @@ export function RecipeBrowser({ params, onParamsChange, onRecipeClick, showSearc
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {recipes.map((recipe, index) => (
                 <div key={`recipe-${recipe.id}`} ref={index === PAGE_SIZE * (page - 1) ? newPageRef : null}>
-                  <RecipeCard recipe={recipe} onClick={() => onRecipeClick(recipe)} />
+                  <RecipeCard
+                    recipe={recipe}
+                    onClick={() => onRecipeClick(recipe)}
+                    onRate={onRecipeRate ? (r) => onRecipeRate(recipe, r) : undefined}
+                  />
                 </div>
               ))}
               {recipes.length === 0 && (
