@@ -34,8 +34,7 @@ export function Rating({
 
   const hovering = hoverValue !== null;
   const display = hovering ? hoverValue! : Math.round(value * 2) / 2;
-  // `!text-yellow-400` beats the global `.star` grey rule so a filled star's
-  // border (stroke) is yellow, not just its fill.
+  // `!text-yellow-400` beats the global `.star` grey rule.
   const fullColor = readOnly ? "filled" : "fill-yellow-400 !text-yellow-400";
 
   return (
@@ -61,7 +60,6 @@ export function Rating({
                 className={cn(
                   "star",
                   sizeClasses[size],
-                  !readOnly && "transition-colors",
                   isFull && fullColor
                 )}
               />
