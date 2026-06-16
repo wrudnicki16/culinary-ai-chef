@@ -49,8 +49,10 @@ export function Rating({
               className={cn(
                 "star",
                 sizeClasses[size],
-                filled && (readOnly ? "filled" : "fill-yellow-400 text-yellow-400"),
-                !readOnly && "cursor-pointer hover:scale-110 transition-transform"
+                // `!text-yellow-400` beats the global `.star` grey rule so a filled
+                // star's border (stroke) is yellow, not just its fill.
+                filled && (readOnly ? "filled" : "fill-yellow-400 !text-yellow-400"),
+                !readOnly && "cursor-pointer transition-colors"
               )}
               onMouseEnter={() => !readOnly && setHoverValue(star)}
               onClick={() => !readOnly && onChange?.(star)}
