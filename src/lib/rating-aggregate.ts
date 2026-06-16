@@ -6,8 +6,8 @@ export interface RatingRow {
 
 /**
  * A recipe's aggregate rating from its rating-bearing comments. Each user
- * contributes one vote — their most recent rating — and the average is rounded
- * to a whole number (the recipes.rating column is an integer).
+ * contributes one vote — their most recent rating — and the average is kept to
+ * two decimal places (the recipes.rating column is a real/float).
  */
 export function computeRatingAggregate(
   rows: RatingRow[]
@@ -22,5 +22,5 @@ export function computeRatingAggregate(
   const ratings = [...latestByUser.values()].map((r) => r.rating);
   if (ratings.length === 0) return { rating: 0, ratingCount: 0 };
   const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
-  return { rating: Math.round(avg), ratingCount: ratings.length };
+  return { rating: Math.round(avg * 100) / 100, ratingCount: ratings.length };
 }

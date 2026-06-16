@@ -111,7 +111,14 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
   };
 
   const handleSubmitComment = async () => {
-    if (!comment.trim() && !userRating) return;
+    if (!userRating) {
+      toast({
+        title: "Add a rating",
+        description: "Please select a star rating before submitting your review.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsSubmittingComment(true);
 

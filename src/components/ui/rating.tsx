@@ -25,13 +25,18 @@ export function Rating({
 }: RatingProps) {
   const [hoverValue, setHoverValue] = useState<number | null>(null);
   const stars = Array.from({ length: max }, (_, i) => i + 1);
-  const threshold = hoverValue ?? value;
 
   const sizeClasses = {
     sm: "text-sm",
     md: "text-base",
     lg: "text-lg",
   };
+
+  const hovering = hoverValue !== null;
+  const display = hovering ? hoverValue! : Math.round(value * 2) / 2;
+  // `!text-yellow-400` beats the global `.star` grey rule so a filled star's
+  // border (stroke) is yellow, not just its fill.
+  const fullColor = readOnly ? "filled" : "fill-yellow-400 !text-yellow-400";
 
   return (
     <div
@@ -40,23 +45,35 @@ export function Rating({
     >
       <div className="star-rating">
         {stars.map((star) => {
-          const filled = star <= threshold;
+          const isFull = star <= Math.floor(display);
+          const isHalf =
+            !hovering && star === Math.floor(display) + 1 && display % 1 !== 0;
           return (
-            <Star
+            <span
               key={star}
+              className={cn("relative inline-flex", !readOnly && "cursor-pointer")}
               role={!readOnly ? "button" : undefined}
               aria-label={!readOnly ? `Rate ${star} star${star > 1 ? "s" : ""}` : undefined}
-              className={cn(
-                "star",
-                sizeClasses[size],
-                // `!text-yellow-400` beats the global `.star` grey rule so a filled
-                // star's border (stroke) is yellow, not just its fill.
-                filled && (readOnly ? "filled" : "fill-yellow-400 !text-yellow-400"),
-                !readOnly && "cursor-pointer transition-colors"
-              )}
               onMouseEnter={() => !readOnly && setHoverValue(star)}
               onClick={() => !readOnly && onChange?.(star)}
-            />
+            >
+              <Star
+                className={cn(
+                  "star",
+                  sizeClasses[size],
+                  !readOnly && "transition-colors",
+                  isFull && fullColor
+                )}
+              />
+              {isHalf && (
+                <span
+                  data-half
+                  className="pointer-events-none absolute inset-0 w-1/2 overflow-hidden"
+                >
+                  <Star className={cn("star", sizeClasses[size], fullColor)} />
+                </span>
+              )}
+            </span>
           );
         })}
       </div>

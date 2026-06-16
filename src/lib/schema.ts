@@ -1,4 +1,4 @@
-import { pgTable, serial, text, varchar, timestamp, jsonb, integer, boolean, index, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, varchar, timestamp, jsonb, integer, real, boolean, index, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import type { AdapterAccount } from "@auth/core/adapters";
 
@@ -75,7 +75,9 @@ export const recipes = pgTable("recipes", {
   servings: integer("servings").notNull(),
   dietaryTags: jsonb("dietary_tags").notNull().$type<string[]>(),
   nutritionInfo: jsonb("nutrition_info").notNull().$type<{ calories: number, protein: number, fat: number, carbs: number, fiber?: number }>(),
-  rating: integer("rating").default(0).notNull(),
+  // The aggregate average is stored with decimal precision (e.g. 4.33); the
+  // per-user `comments.rating` below stays a whole-number 1–5 vote.
+  rating: real("rating").default(0).notNull(),
   ratingCount: integer("rating_count").default(0).notNull(),
   userId: text("user_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),

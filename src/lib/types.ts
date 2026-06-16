@@ -83,14 +83,10 @@ export const recipeGenerationSchema = z.object({
   dietaryFilters: z.array(z.string()).optional(),
 });
 
-export const commentSchema = z
-  .object({
-    comment: z.string().max(500).optional(),
-    rating: z.number().int().min(1).max(5).optional(),
-  })
-  .refine((d) => (d.comment?.trim().length ?? 0) > 0 || d.rating !== undefined, {
-    message: "Provide a rating or a comment",
-  });
+export const commentSchema = z.object({
+  comment: z.string().max(500).optional(),
+  rating: z.number().int().min(1).max(5),
+});
 
 export const favoriteSchema = z.object({
   isFavorite: z.boolean(),

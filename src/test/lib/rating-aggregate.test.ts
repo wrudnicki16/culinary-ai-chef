@@ -14,17 +14,17 @@ describe("computeRatingAggregate", () => {
       { userId: "a", rating: 5, createdAt: d("2026-02-01") }, // a's latest = 5
       { userId: "b", rating: 4, createdAt: d("2026-01-15") },
     ];
-    // latest per user: a=5, b=4 -> avg 4.5 -> round 5, count 2
-    expect(computeRatingAggregate(rows)).toEqual({ rating: 5, ratingCount: 2 });
+    // latest per user: a=5, b=4 -> avg 4.5, count 2
+    expect(computeRatingAggregate(rows)).toEqual({ rating: 4.5, ratingCount: 2 });
   });
 
-  it("rounds the average to a whole number", () => {
+  it("keeps the average to two decimal places", () => {
     const rows = [
       { userId: "a", rating: 3, createdAt: d("2026-01-01") },
       { userId: "b", rating: 4, createdAt: d("2026-01-01") },
       { userId: "c", rating: 4, createdAt: d("2026-01-01") },
     ];
-    // avg 11/3 = 3.67 -> 4, count 3
-    expect(computeRatingAggregate(rows)).toEqual({ rating: 4, ratingCount: 3 });
+    // avg 11/3 = 3.6666... -> 3.67, count 3
+    expect(computeRatingAggregate(rows)).toEqual({ rating: 3.67, ratingCount: 3 });
   });
 });

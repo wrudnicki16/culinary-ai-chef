@@ -34,4 +34,25 @@ describe("Rating", () => {
     await user.click(screen.getByRole("button", { name: "Rate 5 stars" }));
     expect(onChange).toHaveBeenCalledWith(5);
   });
+
+  it("renders a half star for a fractional resting value", () => {
+    render(<Rating value={4.33} readOnly />); // → nearest half 4.5: 4 full + 1 half
+    expect(document.querySelectorAll("[data-half]")).toHaveLength(1);
+    // four whole filled stars precede the half
+    expect(document.querySelectorAll(".star-rating > span:not(:nth-child(5)) .star.filled")).toHaveLength(4);
+  });
+
+  it("renders no half star for a whole resting value", () => {
+    render(<Rating value={4} readOnly />);
+    expect(document.querySelectorAll("[data-half]")).toHaveLength(0);
+  });
+
+  it("previews whole stars on hover even when the resting value is fractional", async () => {
+    const user = userEvent.setup();
+    render(<Rating value={3.5} readOnly={false} onChange={() => {}} />);
+    expect(document.querySelectorAll("[data-half]")).toHaveLength(1); // resting: 3.5
+    await user.hover(screen.getByRole("button", { name: "Rate 4 stars" }));
+    expect(document.querySelectorAll("[data-half]")).toHaveLength(0); // hover → whole
+    expect(document.querySelectorAll(".fill-yellow-400")).toHaveLength(4);
+  });
 });
