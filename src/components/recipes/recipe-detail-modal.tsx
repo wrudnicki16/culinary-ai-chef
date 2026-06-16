@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CheckCircle,
   X,
@@ -27,6 +27,7 @@ import { SAMPLE_RECIPE_IMAGES } from "@/lib/utils";
 import { FormattedText } from "@/components/ui/formatted-text";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useRatingGate } from "@/hooks/useRatingGate";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 
@@ -34,19 +35,38 @@ interface RecipeDetailModalProps {
   recipe: Recipe | null;
   open: boolean;
   onClose: () => void;
+  initialRating?: number;
 }
 
-export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalProps) {
+export function RecipeDetailModal({ recipe, open, onClose, initialRating }: RecipeDetailModalProps) {
   const [userRating, setUserRating] = useState<number>(0);
   const [comment, setComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
   const { toast } = useToast();
   const [selectedServings, setSelectedServings] = useState<number>(recipe?.servings ?? 1);
+  const gate = useRatingGate();
+  const reviewSectionRef = useRef<HTMLDivElement>(null);
+
+  const startReview = (rating: number) => {
+    setUserRating(rating);
+    setShowCommentForm(true);
+    setTimeout(
+      () => reviewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      50
+    );
+  };
 
   useEffect(() => {
     if (recipe) setSelectedServings(recipe.servings);
   }, [recipe?.id, recipe?.servings, open]);
+
+  useEffect(() => {
+    if (open && recipe && initialRating && initialRating > 0) {
+      startReview(initialRating);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, recipe?.id, initialRating]);
 
   if (!recipe) return null;
 
@@ -163,7 +183,15 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
               </div>
               {/* Stars · time · servings — right */}
               <div className="flex items-center gap-3" data-testid="recipe-meta">
-                <span className="flex items-center text-sm">
+                <span className="relative group flex items-center text-sm">
+                  <span className="absolute right-full mr-2 flex items-center rounded-full bg-white/95 px-2 py-1 shadow opacity-0 -translate-x-1 pointer-events-none transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-hover:pointer-events-auto">
+                    <Rating
+                      value={userRating}
+                      size="sm"
+                      readOnly={false}
+                      onChange={(r) => gate(() => startReview(r))}
+                    />
+                  </span>
                   <Star className="h-4 w-4 text-yellow-400 mr-1" />
                   {recipe.rating.toFixed(1)} ({recipe.ratingCount} ratings)
                 </span>
@@ -272,15 +300,19 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
 
           <Separator className="my-6" />
 
-          <div>
+          <div ref={reviewSectionRef}>
             <h3 className="font-heading font-semibold mb-4">Ratings & Reviews</h3>
             <div className="mb-6">
               <div className="flex items-center mb-3">
-                <Rating value={recipe.rating} readOnly />
+                <Rating
+                  value={recipe.rating}
+                  readOnly={false}
+                  onChange={(r) => gate(() => startReview(r))}
+                />
                 <Button
                   variant="link"
                   className="ml-4 text-sm text-primary font-medium"
-                  onClick={() => setShowCommentForm(!showCommentForm)}
+                  onClick={() => gate(() => setShowCommentForm((s) => !s))}
                 >
                   Write a Review
                 </Button>
@@ -339,7 +371,7 @@ export function RecipeDetailModal({ recipe, open, onClose }: RecipeDetailModalPr
                       </div>
                       <Rating value={comment.rating || 5} size="sm" />
                     </div>
-                    <p className="text-sm">{comment.content}</p>
+                    {comment.content && <p className="text-sm">{comment.content}</p>}
                   </div>
                 ))}
 
