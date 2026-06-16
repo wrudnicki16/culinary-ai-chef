@@ -11,16 +11,19 @@ import { Recipe } from "@/lib/types";
 import { dietaryTagLabel, visibleDietaryTags } from "@/lib/dietary-tags";
 import { FormattedText } from "@/components/ui/formatted-text";
 import { useToast } from "@/hooks/use-toast";
+import { useRatingGate } from "@/hooks/useRatingGate";
 
 interface RecipeCardProps {
   recipe: Recipe;
   onClick: () => void;
+  onRate?: (rating: number) => void;
   className?: string;
 }
 
-export function RecipeCard({ recipe, onClick, className }: RecipeCardProps) {
+export function RecipeCard({ recipe, onClick, onRate, className }: RecipeCardProps) {
   const [isFavorite, setIsFavorite] = useState(recipe.isFavorited || false);
   const { toast } = useToast();
+  const gate = useRatingGate();
   const visibleTags = visibleDietaryTags(recipe.dietaryTags);
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
@@ -130,7 +133,14 @@ export function RecipeCard({ recipe, onClick, className }: RecipeCardProps) {
           <FormattedText text={recipe.description} />
         </p>
         <div className="space-y-2">
-          <Rating value={recipe.rating} count={recipe.ratingCount} />
+          <span className="inline-block" onClick={(e) => e.stopPropagation()}>
+            <Rating
+              value={recipe.rating}
+              count={recipe.ratingCount}
+              readOnly={!onRate}
+              onChange={onRate ? (r) => gate(() => onRate(r)) : undefined}
+            />
+          </span>
           <div className="flex flex-wrap gap-1">
             {visibleTags.slice(0, 2).map((tag) => {
               const label = dietaryTagLabel(tag);

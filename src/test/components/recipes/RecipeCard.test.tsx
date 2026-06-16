@@ -2,6 +2,8 @@ import { render, screen, userEvent } from '@/test/utils'
 import { RecipeCard } from '@/components/recipes/recipe-card'
 import { mockRecipe } from '@/test/utils'
 import { dietaryTagLabel } from '@/lib/dietary-tags'
+import { useSession } from 'next-auth/react'
+import { mockSession } from '@/test/utils'
 
 describe('RecipeCard Component', () => {
   const mockOnClick = vi.fn()
@@ -118,5 +120,25 @@ describe('RecipeCard Component', () => {
     render(<RecipeCard recipe={favorited} onClick={mockOnClick} />)
     const saveBtn = screen.getByRole('button', { name: /save recipe/i })
     expect(saveBtn.querySelector('svg')?.getAttribute('class')).toContain('fill-red-500')
+  })
+
+  it('rates via a footer star when authenticated, without opening the card', async () => {
+    vi.mocked(useSession).mockReturnValue({ data: mockSession, status: 'authenticated' } as never)
+    const user = userEvent.setup()
+    const onRate = vi.fn()
+    render(<RecipeCard recipe={mockRecipe} onClick={mockOnClick} onRate={onRate} />)
+    await user.click(screen.getByRole('button', { name: 'Rate 4 stars' }))
+    expect(onRate).toHaveBeenCalledWith(4)
+    expect(mockOnClick).not.toHaveBeenCalled()
+  })
+
+  it('prompts sign-in instead of rating when unauthenticated', async () => {
+    vi.mocked(useSession).mockReturnValue({ data: null, status: 'unauthenticated' } as never)
+    const user = userEvent.setup()
+    const onRate = vi.fn()
+    render(<RecipeCard recipe={mockRecipe} onClick={mockOnClick} onRate={onRate} />)
+    await user.click(screen.getByRole('button', { name: 'Rate 4 stars' }))
+    expect(onRate).not.toHaveBeenCalled()
+    expect(mockOnClick).not.toHaveBeenCalled()
   })
 })
