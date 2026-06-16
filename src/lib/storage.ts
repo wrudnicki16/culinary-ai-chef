@@ -8,7 +8,8 @@ import {
   RecipeEmbedding, InsertRecipeEmbedding
 } from "./schema";
 import { db } from "./db";
-import { eq, and, or, ilike, desc, asc, sql } from "drizzle-orm";
+import { eq, and, or, ilike, desc, asc, sql, isNotNull } from "drizzle-orm";
+import { computeRatingAggregate } from "@/lib/rating-aggregate";
 import {
   users, recipes, comments, favorites,
   groceryItems, chatMessages, recipeEmbeddings
@@ -37,6 +38,7 @@ export interface IStorage {
   // Comment operations
   getRecipeComments(recipeId: number): Promise<Comment[]>;
   createComment(comment: InsertComment): Promise<Comment>;
+  recomputeRecipeRating(recipeId: number): Promise<void>;
 
   // Favorite operations
   getFavorite(userId: string, recipeId: number): Promise<Favorite | undefined>;
@@ -269,7 +271,28 @@ export class Storage implements IStorage {
       createdAt: new Date(),
     }).returning();
 
+    await this.recomputeRecipeRating(comment.recipeId);
+
     return result[0];
+  }
+
+  async recomputeRecipeRating(recipeId: number): Promise<void> {
+    const rows = await db
+      .select({
+        userId: comments.userId,
+        rating: comments.rating,
+        createdAt: comments.createdAt,
+      })
+      .from(comments)
+      .where(and(eq(comments.recipeId, recipeId), isNotNull(comments.rating)));
+
+    const valid = rows.filter(
+      (r): r is { userId: string; rating: number; createdAt: Date } =>
+        r.rating !== null && r.createdAt !== null
+    );
+
+    const { rating, ratingCount } = computeRatingAggregate(valid);
+    await this.updateRecipe(recipeId, { rating, ratingCount });
   }
 
   async getFavorite(userId: string, recipeId: number): Promise<Favorite | undefined> {

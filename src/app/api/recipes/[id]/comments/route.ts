@@ -32,7 +32,7 @@ export async function POST(
     const userId = authResult.id;
 
     const newComment = await storage.createComment({
-      content: comment,
+      content: (comment ?? "").trim(),
       rating: rating,
       userId: userId,
       recipeId: recipeId
