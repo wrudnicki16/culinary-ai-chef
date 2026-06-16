@@ -2,6 +2,7 @@ import { render, screen, userEvent } from "@/test/utils";
 import { useSession } from "next-auth/react";
 import { mockSession, mockRecipe } from "@/test/utils";
 import { RecipeDetailModal } from "@/components/recipes/recipe-detail-modal";
+import type { Recipe } from "@/lib/types";
 
 beforeAll(() => {
   // @ts-expect-error minimal jsdom stubs for Radix Dialog/Select
@@ -36,5 +37,37 @@ describe("RecipeDetailModal ratings", () => {
     render(<RecipeDetailModal recipe={mockRecipe} open onClose={() => {}} />);
     await user.click(screen.getAllByRole("button", { name: "Rate 5 stars" })[0]);
     expect(screen.queryByText("Your Review")).not.toBeInTheDocument();
+  });
+});
+
+// Preserved from the original servings-control test (do not drop this coverage):
+// the modal still renders allergen pills, the servings control, and base macros.
+const servingsRecipe: Recipe = {
+  id: 1,
+  title: "Test Bowl",
+  description: "A tasty test bowl.",
+  imageUrl: null,
+  ingredients: [{ name: "rice", quantity: "2 cups" }],
+  instructions: ["Cook rice."],
+  cookingTime: 30,
+  servings: 4,
+  dietaryTags: ["Gluten Free", "High Protein"],
+  nutritionInfo: { calories: 500, protein: 40, fat: 20, carbs: 60, fiber: 5 },
+  rating: 4.5,
+  ratingCount: 12,
+  userId: "u1",
+  comments: [],
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  isAIGenerated: true,
+  isVerified: true,
+};
+
+describe("RecipeDetailModal servings control", () => {
+  it("renders allergen pills, a servings control, and base per-serving macros", () => {
+    render(<RecipeDetailModal recipe={servingsRecipe} open={true} onClose={() => {}} />);
+    expect(screen.getByText("Gluten-Free")).toBeInTheDocument();
+    expect(screen.getByLabelText("Servings")).toBeInTheDocument();
+    expect(screen.getByText("500")).toBeInTheDocument(); // base per-serving calories
   });
 });
