@@ -23,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { deriveServingNutrition } from "@/lib/portion-scaling";
 import { Recipe, Comment } from "@/lib/types";
 import { dietaryTagLabel, visibleDietaryTags } from "@/lib/dietary-tags";
-import { SAMPLE_RECIPE_IMAGES } from "@/lib/utils";
+import { SAMPLE_RECIPE_IMAGES, cn } from "@/lib/utils";
 import { FormattedText } from "@/components/ui/formatted-text";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -47,6 +47,7 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
   const [selectedServings, setSelectedServings] = useState<number>(recipe?.servings ?? 1);
   const gate = useRatingGate();
   const reviewSectionRef = useRef<HTMLDivElement>(null);
+  const [topHover, setTopHover] = useState<number | null>(null);
 
   const startReview = (rating: number) => {
     setUserRating(rating);
@@ -183,16 +184,45 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
               </div>
               {/* Stars · time · servings — right */}
               <div className="flex items-center gap-3" data-testid="recipe-meta">
-                <span className="relative group flex items-center text-sm">
-                  <span className="absolute right-full mr-2 flex items-center rounded-full bg-white/95 px-2 py-1 shadow opacity-0 -translate-x-1 pointer-events-none transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-hover:pointer-events-auto">
-                    <Rating
-                      value={userRating}
-                      size="sm"
-                      readOnly={false}
-                      onChange={(r) => gate(() => startReview(r))}
-                    />
+                <span className="relative flex items-center text-sm">
+                  {/* The anchor star reserves its width in the flow; the picker is
+                      pinned to this box's right edge and grows leftward on hover, so
+                      the four hidden stars reveal contiguously to the left of the
+                      star we always see — transparent, with no gap to cross. */}
+                  <span className="relative inline-block h-4 w-4 mr-1">
+                    <span
+                      className="group absolute right-0 top-1/2 -translate-y-1/2 flex items-center rounded-md border border-transparent p-1.5 transition-colors hover:border-white/40"
+                      onMouseLeave={() => setTopHover(null)}
+                    >
+                      {[1, 2, 3, 4, 5].map((star) => {
+                        const filled = star <= (topHover ?? 0);
+                        const isAnchor = star === 5;
+                        return (
+                          <button
+                            key={star}
+                            type="button"
+                            aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                            onMouseEnter={() => setTopHover(star)}
+                            onClick={() => gate(() => startReview(star))}
+                            className={cn(
+                              "flex-shrink-0 overflow-hidden transition-all duration-200",
+                              !isAnchor &&
+                                "w-0 opacity-0 group-hover:w-4 group-hover:opacity-100"
+                            )}
+                          >
+                            <Star
+                              className={cn(
+                                "h-4 w-4 cursor-pointer transition-colors",
+                                filled
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-gray-300 group-hover:text-yellow-400"
+                              )}
+                            />
+                          </button>
+                        );
+                      })}
+                    </span>
                   </span>
-                  <Star className="h-4 w-4 text-yellow-400 mr-1" />
                   {recipe.rating.toFixed(1)} ({recipe.ratingCount} ratings)
                 </span>
                 <span className="flex items-center text-sm">
