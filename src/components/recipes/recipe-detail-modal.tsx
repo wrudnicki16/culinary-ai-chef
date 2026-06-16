@@ -219,7 +219,7 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
                           >
                             <Star
                               className={cn(
-                                "h-4 w-4 cursor-pointer transition-colors",
+                                "h-4 w-4 cursor-pointer",
                                 filled
                                   ? "fill-yellow-400 text-yellow-400"
                                   : "text-gray-300 group-hover:text-yellow-400"
