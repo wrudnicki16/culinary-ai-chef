@@ -27,6 +27,7 @@ import { FormattedText } from "@/components/ui/formatted-text";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useRatingGate } from "@/hooks/useRatingGate";
+import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 
@@ -45,6 +46,7 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
   const { toast } = useToast();
   const [selectedServings, setSelectedServings] = useState<number>(recipe?.servings ?? 1);
   const gate = useRatingGate();
+  const { user } = useAuth();
   const reviewSectionRef = useRef<HTMLDivElement>(null);
   const [topHover, setTopHover] = useState<number | null>(null);
 
@@ -69,6 +71,20 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
   }, [open, recipe?.id, initialRating]);
 
   if (!recipe) return null;
+
+  // Comments arrive newest-first; keep only each person's most recent review so the
+  // displayed list matches the backend's one-rating-per-user aggregate.
+  const seenAuthors = new Set<string>();
+  const dedupedComments = (view.comments ?? []).filter((c) => {
+    if (seenAuthors.has(c.user.id)) return false;
+    seenAuthors.add(c.user.id);
+    return true;
+  });
+
+  // Once you've reviewed this recipe, the review entry points are locked.
+  const currentUserId = user?.id;
+  const alreadyReviewed =
+    !!currentUserId && dedupedComments.some((c) => c.user.id === currentUserId);
 
   const displayedNutrition = deriveServingNutrition(
     recipe.nutritionInfo,
@@ -208,6 +224,7 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
                             key={star}
                             type="button"
                             aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                            disabled={alreadyReviewed}
                             onMouseEnter={() => setTopHover(star)}
                             onClick={() => gate(() => startReview(star))}
                             className={cn(
@@ -229,7 +246,7 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
                       })}
                     </span>
                   </span>
-                  {recipe.rating.toFixed(1)} ({recipe.ratingCount} ratings)
+                  {view.rating.toFixed(1)} ({view.ratingCount} ratings)
                 </span>
                 <span className="flex items-center text-sm">
                   <Timer className="h-4 w-4 mr-1" />
@@ -341,10 +358,16 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
             <div className="mb-6">
               <div className="flex items-center mb-3">
                 <Rating
-                  value={recipe.rating}
-                  readOnly={false}
+                  value={view.rating}
+                  readOnly={alreadyReviewed}
                   onChange={(r) => gate(() => startReview(r))}
                 />
+                {alreadyReviewed ? (
+                  <span className="ml-4 flex items-center text-sm text-gray-500">
+                    <CheckCircle className="mr-1 h-4 w-4 text-green-600" />
+                    You&rsquo;ve reviewed this recipe
+                  </span>
+                ) : (
                 <Button
                   variant="link"
                   className="ml-4 text-sm text-primary font-medium"
@@ -352,9 +375,10 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
                 >
                   Write a Review
                 </Button>
+                )}
               </div>
 
-              {showCommentForm && (
+              {showCommentForm && !alreadyReviewed && (
                 <div className="bg-muted p-4 rounded-lg mb-4">
                   <div className="mb-3">
                     <label className="block text-sm font-medium mb-1">Your Rating</label>
@@ -392,7 +416,7 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
               )}
 
               <div className="space-y-4">
-                {recipe.comments && recipe.comments.map((comment: Comment) => (
+                {dedupedComments.map((comment: Comment) => (
                   <div key={comment.id} className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex justify-between mb-2">
                       <div className="flex items-center">
@@ -411,7 +435,7 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
                   </div>
                 ))}
 
-                {(!recipe.comments || recipe.comments.length === 0) && (
+                {dedupedComments.length === 0 && (
                   <div className="text-center p-4 bg-gray-50 rounded-lg">
                     <p className="text-sm text-gray-500">No reviews yet. Be the first to review this recipe!</p>
                   </div>
