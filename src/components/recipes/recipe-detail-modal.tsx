@@ -7,7 +7,6 @@ import {
   Star,
   Timer,
   Share2,
-  Bookmark,
   Heart,
   ShoppingCart,
   Utensils,
@@ -155,7 +154,7 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden" onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden flex flex-col gap-0" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader className="sr-only">
           <DialogTitle>{recipe.title}</DialogTitle>
           <DialogDescription>Detailed information, ingredients, instructions, and reviews for {recipe.title}.</DialogDescription>
@@ -168,7 +167,7 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
         >
           <X className="h-5 w-5 text-gray-800" />
         </Button>
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <div className="w-full h-80 md:h-96 overflow-hidden">
             <img
               src={recipe.imageUrl || SAMPLE_RECIPE_IMAGES[recipe.id % SAMPLE_RECIPE_IMAGES.length]}
@@ -262,7 +261,7 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-300px)]">
+        <div className="flex-1 min-h-0 overflow-y-auto p-6">
           <h2 className="recipe-title text-2xl font-bold mb-3">
             <FormattedText text={recipe.title} />
           </h2>
@@ -422,13 +421,10 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
           </div>
         </div>
 
-        <div className="border-t border-gray-200 py-4 px-6 flex items-center justify-between bg-gray-50">
+        <div className="border-t border-gray-200 py-4 px-6 flex items-center justify-between bg-gray-50 flex-shrink-0">
           <div className="flex gap-3">
             <Button variant="ghost" size="icon" className="rounded-full p-2 hover:bg-gray-200">
               <Share2 className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="rounded-full p-2 hover:bg-gray-200">
-              <Bookmark className="h-5 w-5" />
             </Button>
             <Button variant="ghost" size="icon" className="rounded-full p-2 hover:bg-gray-200">
               <Heart className="h-5 w-5" />
