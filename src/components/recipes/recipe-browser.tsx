@@ -25,6 +25,9 @@ interface RecipeBrowserProps {
   onRecipeClick: (recipe: Recipe) => void;
   onRecipeRate?: (recipe: Recipe, rating: number) => void;
   showSearch?: boolean;
+  /** When set, renders a section header row with this title on the left and the
+   *  sort controls on the right (lifted out of the inner toolbar). */
+  title?: string;
 }
 
 const PAGE_SIZE = 10;
@@ -37,7 +40,7 @@ function filterLabel(id: string): string {
   return id;
 }
 
-export function RecipeBrowser({ params, onParamsChange, onRecipeClick, onRecipeRate, showSearch }: RecipeBrowserProps) {
+export function RecipeBrowser({ params, onParamsChange, onRecipeClick, onRecipeRate, showSearch, title }: RecipeBrowserProps) {
   const { search, filters, sort } = params;
   const filterKey = filters.join(",");
 
@@ -111,109 +114,123 @@ export function RecipeBrowser({ params, onParamsChange, onRecipeClick, onRecipeR
   const recipes = allRecipes.length > 0 ? allRecipes : data?.recipes ?? [];
   const hasMore = data?.total ? recipes.length < data.total : false;
 
+  const sortControls = (
+    <div className="flex gap-3 items-center">
+      <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700">
+        <Sliders className="h-5 w-5" />
+      </Button>
+      <Select value={sort} onValueChange={(value) => onParamsChange({ ...params, sort: value })}>
+        <SelectTrigger className="w-[140px] text-sm"><SelectValue placeholder="Sort by" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="popular">Most Popular</SelectItem>
+          <SelectItem value="newest">Newest</SelectItem>
+          <SelectItem value="quickest">Quickest</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
   return (
-    <div className="flex flex-col md:flex-row gap-8">
-      <FilterSidebar activeFilters={filters} onFilterChange={(next) => onParamsChange({ ...params, filters: next })} />
-      <div className="flex-1">
+    <>
+      {title && (
         <div className="flex items-center justify-between gap-3 mb-5">
-          {showSearch ? (
-            <div className="flex items-center gap-3 flex-1">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  value={searchInput}
-                  placeholder="Search by ingredient, cuisine, or dish…"
-                  className="pl-9 pr-9"
-                  aria-label="Search recipes"
-                  onChange={(e) => { setSearchInput(e.target.value); pushSearch(e.target.value); }}
+          <h2 className="text-xl font-heading font-semibold">{title}</h2>
+          {sortControls}
+        </div>
+      )}
+      <div className="flex flex-col md:flex-row gap-8">
+        <FilterSidebar activeFilters={filters} onFilterChange={(next) => onParamsChange({ ...params, filters: next })} />
+        <div className="flex-1">
+          {(showSearch || !title) && (
+            <div className="flex items-center justify-between gap-3 mb-5">
+              {showSearch ? (
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      value={searchInput}
+                      placeholder="Search by ingredient, cuisine, or dish…"
+                      className="pl-9 pr-9"
+                      aria-label="Search recipes"
+                      onChange={(e) => { setSearchInput(e.target.value); pushSearch(e.target.value); }}
+                    />
+                    {searchInput && (
+                      <button
+                        type="button"
+                        aria-label="Clear search"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        onClick={() => { setSearchInput(""); pushSearch(""); }}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  <span className="text-sm text-gray-500 whitespace-nowrap">{data?.total ?? 0} results</span>
+                </div>
+              ) : (
+                <div />
+              )}
+              {!title && sortControls}
+            </div>
+          )}
+
+          {filters.length > 0 && (
+            <div className="mb-6 flex items-center flex-wrap gap-2">
+              <span className="text-sm font-medium text-gray-500">Active filters:</span>
+              {filters.map((id) => (
+                <FilterChip
+                  key={id}
+                  id={id}
+                  label={filterLabel(id)}
+                  isActive
+                  onClick={() => {}}
+                  onRemove={() => onParamsChange({ ...params, filters: filters.filter((f) => f !== id) })}
                 />
-                {searchInput && (
-                  <button
-                    type="button"
-                    aria-label="Clear search"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    onClick={() => { setSearchInput(""); pushSearch(""); }}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-              <span className="text-sm text-gray-500 whitespace-nowrap">{data?.total ?? 0} results</span>
+              ))}
+            </div>
+          )}
+
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-white rounded-xl shadow-sm h-80 animate-pulse" />
+              ))}
             </div>
           ) : (
-            <div />
-          )}
-          <div className="flex gap-3 items-center">
-            <Button variant="ghost" size="icon" className="text-gray-500 hover:text-gray-700">
-              <Sliders className="h-5 w-5" />
-            </Button>
-            <Select value={sort} onValueChange={(value) => onParamsChange({ ...params, sort: value })}>
-              <SelectTrigger className="w-[140px] text-sm"><SelectValue placeholder="Sort by" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="popular">Most Popular</SelectItem>
-                <SelectItem value="newest">Newest</SelectItem>
-                <SelectItem value="quickest">Quickest</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {filters.length > 0 && (
-          <div className="mb-6 flex items-center flex-wrap gap-2">
-            <span className="text-sm font-medium text-gray-500">Active filters:</span>
-            {filters.map((id) => (
-              <FilterChip
-                key={id}
-                id={id}
-                label={filterLabel(id)}
-                isActive
-                onClick={() => {}}
-                onRemove={() => onParamsChange({ ...params, filters: filters.filter((f) => f !== id) })}
-              />
-            ))}
-          </div>
-        )}
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm h-80 animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recipes.map((recipe, index) => (
-                <div key={`recipe-${recipe.id}`} ref={index === PAGE_SIZE * (page - 1) ? newPageRef : null}>
-                  <RecipeCard
-                    recipe={recipe}
-                    onClick={() => onRecipeClick(recipe)}
-                    onRate={onRecipeRate ? (r) => onRecipeRate(recipe, r) : undefined}
-                  />
-                </div>
-              ))}
-              {recipes.length === 0 && (
-                <div className="col-span-3 py-12 text-center">
-                  <p className="text-gray-500">No recipes found matching your criteria. Try adjusting your filters.</p>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {recipes.map((recipe, index) => (
+                  <div key={`recipe-${recipe.id}`} ref={index === PAGE_SIZE * (page - 1) ? newPageRef : null}>
+                    <RecipeCard
+                      recipe={recipe}
+                      onClick={() => onRecipeClick(recipe)}
+                      onRate={onRecipeRate ? (r) => onRecipeRate(recipe, r) : undefined}
+                    />
+                  </div>
+                ))}
+                {recipes.length === 0 && (
+                  <div className="col-span-3 py-12 text-center">
+                    <p className="text-gray-500">No recipes found matching your criteria. Try adjusting your filters.</p>
+                  </div>
+                )}
+              </div>
+              {recipes.length > 0 && hasMore && (
+                <div className="mt-8 text-center">
+                  <Button
+                    variant="outline"
+                    className="inline-flex items-center"
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={isFetching}
+                  >
+                    {isFetching ? "Loading..." : "Load More Recipes"}
+                    <ChevronDown className="ml-1 h-4 w-4" />
+                  </Button>
                 </div>
               )}
-            </div>
-            {recipes.length > 0 && hasMore && (
-              <div className="mt-8 text-center">
-                <Button
-                  variant="outline"
-                  className="inline-flex items-center"
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={isFetching}
-                >
-                  {isFetching ? "Loading..." : "Load More Recipes"}
-                  <ChevronDown className="ml-1 h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

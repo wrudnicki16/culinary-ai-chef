@@ -41,8 +41,7 @@ export default function Home() {
           <RecipeCreator onRecipeGenerated={openRecipe} />
 
           <section>
-            <h2 className="text-xl font-heading font-semibold mb-5">Recommended For You</h2>
-            <RecipeBrowser params={params} onParamsChange={setParams} onRecipeClick={openRecipe} onRecipeRate={rateRecipe} />
+            <RecipeBrowser title="Recommended For You" params={params} onParamsChange={setParams} onRecipeClick={openRecipe} onRecipeRate={rateRecipe} />
           </section>
         </div>
       </main>
