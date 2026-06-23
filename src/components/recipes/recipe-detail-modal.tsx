@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle,
   X,
@@ -29,7 +30,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useRatingGate } from "@/hooks/useRatingGate";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
-import { queryClient } from "@/lib/queryClient";
 
 interface RecipeDetailModalProps {
   recipe: Recipe | null;
@@ -47,8 +47,19 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
   const [selectedServings, setSelectedServings] = useState<number>(recipe?.servings ?? 1);
   const gate = useRatingGate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const reviewSectionRef = useRef<HTMLDivElement>(null);
   const [topHover, setTopHover] = useState<number | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  // Full recipe detail (comments + this user's favorite status) fetched while the
+  // modal is open. The list/card data seeding `recipe` carries no comments, and
+  // submitting a review invalidates this exact key to surface the new review.
+  const { data: detail } = useQuery<Recipe>({
+    queryKey: [`/api/recipes/${recipe?.id}`],
+    enabled: open && !!recipe,
+    placeholderData: recipe ?? undefined,
+  });
 
   const startReview = (rating: number) => {
     setUserRating(rating);
@@ -70,7 +81,15 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, recipe?.id, initialRating]);
 
+  // Reflect the server's favorite status (pre-existing saves show as filled red).
+  useEffect(() => {
+    setIsFavorite(detail?.isFavorited ?? recipe?.isFavorited ?? false);
+  }, [detail?.isFavorited, recipe?.isFavorited, recipe?.id, open]);
+
   if (!recipe) return null;
+
+  // Prefer the freshly fetched detail (comments, rating aggregate) over the seed prop.
+  const view = detail ?? recipe;
 
   // Comments arrive newest-first; keep only each person's most recent review so the
   // displayed list matches the backend's one-rating-per-user aggregate.
@@ -167,6 +186,28 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
       setIsSubmittingComment(false);
     }
   };
+
+  const handleToggleFavorite = () =>
+    gate(async () => {
+      const next = !isFavorite;
+      setIsFavorite(next); // optimistic
+      try {
+        await apiRequest("POST", `/api/recipes/${recipe.id}/favorite`, { isFavorite: next });
+        toast({
+          title: next ? "Recipe saved!" : "Recipe removed",
+          description: next ? "Added to your favorites" : "Removed from your favorites",
+        });
+        queryClient.invalidateQueries({ queryKey: [`/api/recipes/${recipe.id}`] });
+        queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      } catch {
+        setIsFavorite(!next); // revert on failure
+        toast({
+          title: "Error updating favorite",
+          description: "There was a problem updating your favorites. Please try again.",
+          variant: "destructive",
+        });
+      }
+    });
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
@@ -368,13 +409,13 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
                     You&rsquo;ve reviewed this recipe
                   </span>
                 ) : (
-                <Button
-                  variant="link"
-                  className="ml-4 text-sm text-primary font-medium"
-                  onClick={() => gate(() => setShowCommentForm((s) => !s))}
-                >
-                  Write a Review
-                </Button>
+                  <Button
+                    variant="link"
+                    className="ml-4 text-sm text-primary font-medium"
+                    onClick={() => gate(() => setShowCommentForm((s) => !s))}
+                  >
+                    Write a Review
+                  </Button>
                 )}
               </div>
 
@@ -450,8 +491,15 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
             <Button variant="ghost" size="icon" className="rounded-full p-2 hover:bg-gray-200">
               <Share2 className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-full p-2 hover:bg-gray-200">
-              <Heart className="h-5 w-5" />
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={isFavorite ? "Remove from favorites" : "Save to favorites"}
+              aria-pressed={isFavorite}
+              className="rounded-full p-2 hover:bg-gray-200"
+              onClick={handleToggleFavorite}
+            >
+              <Heart className={cn("h-5 w-5", isFavorite && "fill-red-500 text-red-500")} />
             </Button>
           </div>
           <div>

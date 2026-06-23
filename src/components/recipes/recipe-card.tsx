@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Heart, Timer, Users, Sparkles, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,7 +25,14 @@ export function RecipeCard({ recipe, onClick, onRate, className }: RecipeCardPro
   const [isFavorite, setIsFavorite] = useState(recipe.isFavorited || false);
   const { toast } = useToast();
   const gate = useRatingGate();
+  const queryClient = useQueryClient();
   const visibleTags = visibleDietaryTags(recipe.dietaryTags);
+
+  // Keep the heart in step with server truth when the list refetches — e.g. after
+  // the favorite is toggled from the recipe detail modal.
+  useEffect(() => {
+    setIsFavorite(recipe.isFavorited ?? false);
+  }, [recipe.isFavorited, recipe.id]);
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -53,6 +61,10 @@ export function RecipeCard({ recipe, onClick, onRate, className }: RecipeCardPro
           : "Removed from your favorites",
         variant: "default",
       });
+
+      // Keep cached lists + any open detail view in sync with the new server state.
+      queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/recipes/${recipe.id}`] });
     } catch (error) {
       // Revert UI state if API call fails
       setIsFavorite(isFavorite);
