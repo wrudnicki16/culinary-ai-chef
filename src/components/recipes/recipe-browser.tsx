@@ -75,25 +75,28 @@ export function RecipeBrowser({ params, onParamsChange, onRecipeClick, onRecipeR
     },
   });
 
-  // Accumulate across pages (page 1 replaces; later pages append + scroll).
+  // Accumulate pages, merging by id so a refetch updates items in place rather than
+  // re-appending duplicates. Only genuinely new ids (the next page) trigger the scroll.
   useEffect(() => {
     if (!data?.recipes) return;
     if (page === 1) {
       setAllRecipes(data.recipes);
-    } else {
-      setAllRecipes((prev) => {
-        const next = [...prev, ...data.recipes];
-        if (next.length > prev.length) {
-          setTimeout(() => {
-            if (newPageRef.current) {
-              const top = newPageRef.current.getBoundingClientRect().top;
-              window.scrollBy({ top: top - 84, behavior: "smooth" });
-            }
-          }, 100);
-        }
-        return next;
-      });
+      return;
     }
+    setAllRecipes((prev) => {
+      const byId = new Map(prev.map((r) => [r.id, r]));
+      const hasNewIds = data.recipes.some((r) => !byId.has(r.id));
+      data.recipes.forEach((r) => byId.set(r.id, r));
+      if (hasNewIds) {
+        setTimeout(() => {
+          if (newPageRef.current) {
+            const top = newPageRef.current.getBoundingClientRect().top;
+            window.scrollBy({ top: top - 84, behavior: "smooth" });
+          }
+        }, 100);
+      }
+      return Array.from(byId.values());
+    });
   }, [data?.recipes, page]);
 
   // Reset to page 1 when query inputs change — but NOT on initial mount (a cached
