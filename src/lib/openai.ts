@@ -3,6 +3,7 @@ import { Ingredient, NutritionInfo } from "./types";
 import { analyzeNutritionWithEdamam } from "./edamam";
 import { scaleRecipePortions } from "./portion-scaling";
 import { mergeDietaryTags } from "./dietary-tags";
+import type { GenerationStage } from "@/lib/generation/stages";
 
 // Configure OpenAI models from environment variables
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-2024-11-20";
@@ -133,7 +134,12 @@ export async function validateRecipeSafety(recipe: {
 }
 
 // Generate a new recipe from a prompt
-export async function generateRecipe(prompt: string, dietaryFilters: string[] = [], targetServings: number | null = null): Promise<{
+export async function generateRecipe(
+  prompt: string,
+  dietaryFilters: string[] = [],
+  targetServings: number | null = null,
+  onStage?: (stage: GenerationStage) => void | Promise<void>,
+): Promise<{
   title: string;
   description: string;
   imageUrl: string | null;
@@ -795,6 +801,7 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
     try {
       // Only generate image if title, description, and instructions are present
       if (recipeData.title && recipeData.description && recipeData.instructions) {
+        await onStage?.('image');
         const imageResult = await generateRecipeImage(
           recipeData.title,
           recipeData.description,
@@ -808,6 +815,7 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
     }
 
     // Replace LLM nutrition estimate with Edamam data when available
+    await onStage?.('nutrition');
     const edamamNutrition = await analyzeNutritionWithEdamam(
       recipeData.ingredients,
       recipeData.servings
