@@ -5,14 +5,15 @@ import {
   Favorite, InsertFavorite,
   GroceryItem, InsertGroceryItem,
   ChatMessage, InsertChatMessage,
-  RecipeEmbedding, InsertRecipeEmbedding
+  RecipeEmbedding, InsertRecipeEmbedding,
+  GenerationJob, InsertGenerationJob
 } from "./schema";
 import { db } from "./db";
-import { eq, and, or, ilike, desc, asc, sql, isNotNull } from "drizzle-orm";
+import { eq, and, or, ilike, desc, asc, sql, isNotNull, inArray, lt } from "drizzle-orm";
 import { computeRatingAggregate } from "@/lib/rating-aggregate";
 import {
   users, recipes, comments, favorites,
-  groceryItems, chatMessages, recipeEmbeddings
+  groceryItems, chatMessages, recipeEmbeddings, generationJobs
 } from "./schema";
 
 // Interface for storage operations
@@ -57,6 +58,13 @@ export interface IStorage {
 
   // Recipe embedding operations
   createRecipeEmbedding(embedding: InsertRecipeEmbedding): Promise<RecipeEmbedding>;
+
+  // Generation job operations
+  createGenerationJob(job: InsertGenerationJob): Promise<GenerationJob>;
+  getGenerationJob(id: number): Promise<GenerationJob | undefined>;
+  getActiveGenerationJobs(userId: string): Promise<GenerationJob[]>;
+  updateGenerationJob(id: number, patch: Partial<Pick<GenerationJob, 'status' | 'stage' | 'recipeId' | 'error' | 'attempt'>>): Promise<GenerationJob | undefined>;
+  failStaleGenerationJobs(ttlMs: number): Promise<number>;
 
   // Admin operations
   getAdminStats(): Promise<{
@@ -387,6 +395,52 @@ export class Storage implements IStorage {
     }).returning();
 
     return result[0];
+  }
+
+  async createGenerationJob(job: InsertGenerationJob): Promise<GenerationJob> {
+    const result = await db.insert(generationJobs).values({
+      ...job,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
+    return result[0];
+  }
+
+  async getGenerationJob(id: number): Promise<GenerationJob | undefined> {
+    const result = await db.select().from(generationJobs).where(eq(generationJobs.id, id));
+    return result[0];
+  }
+
+  async getActiveGenerationJobs(userId: string): Promise<GenerationJob[]> {
+    return await db.select().from(generationJobs)
+      .where(and(
+        eq(generationJobs.userId, userId),
+        inArray(generationJobs.status, ['pending', 'processing']),
+      ))
+      .orderBy(desc(generationJobs.createdAt));
+  }
+
+  async updateGenerationJob(
+    id: number,
+    patch: Partial<Pick<GenerationJob, 'status' | 'stage' | 'recipeId' | 'error' | 'attempt'>>,
+  ): Promise<GenerationJob | undefined> {
+    const result = await db.update(generationJobs)
+      .set({ ...patch, updatedAt: new Date() })
+      .where(eq(generationJobs.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async failStaleGenerationJobs(ttlMs: number): Promise<number> {
+    const cutoff = new Date(Date.now() - ttlMs);
+    const result = await db.update(generationJobs)
+      .set({ status: 'error', error: 'timed out', updatedAt: new Date() })
+      .where(and(
+        inArray(generationJobs.status, ['pending', 'processing']),
+        lt(generationJobs.updatedAt, cutoff),
+      ))
+      .returning();
+    return result.length;
   }
 
   async getAdminStats(): Promise<{
