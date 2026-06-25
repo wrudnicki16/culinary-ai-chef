@@ -100,6 +100,23 @@ export const favorites = pgTable("favorites", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const generationJobs = pgTable("generation_jobs", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id),
+  status: text("status").notNull().default("pending"),
+  stage: text("stage").notNull().default("queued"),
+  prompt: text("prompt").notNull(),
+  dietaryFilters: jsonb("dietary_filters").notNull().$type<string[]>().default([]),
+  recipeId: integer("recipe_id").references(() => recipes.id),
+  error: text("error"),
+  attempt: integer("attempt").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("generation_jobs_user_id_idx").on(table.userId),
+  statusIdx: index("generation_jobs_status_idx").on(table.status),
+}));
+
 // Comments table
 export const comments = pgTable("comments", {
   id: serial("id").primaryKey(),
@@ -173,6 +190,10 @@ export type Comment = typeof comments.$inferSelect;
 export const insertFavoriteSchema = createInsertSchema(favorites).omit({ id: true, createdAt: true });
 export type InsertFavorite = Omit<typeof favorites.$inferInsert, 'id' | 'createdAt'>;
 export type Favorite = typeof favorites.$inferSelect;
+
+export const insertGenerationJobSchema = createInsertSchema(generationJobs).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertGenerationJob = Omit<typeof generationJobs.$inferInsert, 'id' | 'createdAt' | 'updatedAt'>;
+export type GenerationJob = typeof generationJobs.$inferSelect;
 
 export const insertGroceryItemSchema = createInsertSchema(groceryItems).omit({ id: true, createdAt: true });
 export type InsertGroceryItem = Omit<typeof groceryItems.$inferInsert, 'id' | 'createdAt'>;
