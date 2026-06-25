@@ -1,93 +1,42 @@
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { requireAuth, validateRequestBody } from "@/lib/api-auth";
 import { storage } from "@/lib/storage";
-import { generateRecipe, generateEmbedding, researchRelatedRecipes } from "@/lib/openai";
 import { recipeGenerationSchema } from "@/lib/types";
-import { InsertRecipe } from "@/lib/schema";
+import { processGenerationJob } from "@/lib/generation/worker";
+
+// Give the after() worker headroom (generation is ~30–50s); the reaper is the backstop.
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   const authResult = await requireAuth(request);
+  if (authResult instanceof Response) return authResult;
 
-  if (authResult instanceof Response) {
-    return authResult;
+  const rawBody = await request.json();
+  const bodyResult = validateRequestBody(rawBody, recipeGenerationSchema);
+  if (bodyResult instanceof Response) return bodyResult;
+
+  const { prompt, dietaryFilters } = bodyResult;
+  const userId = authResult.id;
+
+  // Single in-flight: re-attach instead of starting a second job.
+  const active = await storage.getActiveGenerationJobs(userId);
+  if (active.length > 0) {
+    return Response.json({ jobId: active[0].id, status: active[0].status }, { status: 409 });
   }
 
-  try {
-    const rawBody = await request.json();
-    const bodyResult = validateRequestBody(rawBody, recipeGenerationSchema);
+  const job = await storage.createGenerationJob({
+    userId,
+    status: "pending",
+    stage: "queued",
+    prompt,
+    dietaryFilters: dietaryFilters ?? [],
+    recipeId: null,
+    error: null,
+    attempt: 1,
+  });
 
-    if (bodyResult instanceof Response) {
-      return bodyResult;
-    }
+  // Runs after the response is sent — decoupled from the client connection.
+  after(() => processGenerationJob(job.id));
 
-    const { prompt, dietaryFilters } = bodyResult;
-    const userId = authResult.id;
-
-    const user = await storage.getUser(userId);
-    const targetServings = user?.defaultServings ?? null;
-
-    console.log(`Route received filters: ${JSON.stringify(dietaryFilters)}`);
-
-    // Research related recipes using RAG if we have embeddings
-    let researchContext = "";
-    try {
-      // In a real implementation, you would retrieve similar embeddings from vector DB
-      // Here we'll just pass an empty array
-      researchContext = await researchRelatedRecipes(prompt, []);
-    } catch (error) {
-      console.error("Error researching related recipes:", error);
-      // Continue without research context
-    }
-
-    // Generate the recipe
-    const recipeData = await generateRecipe(
-      `${prompt}\n\n${researchContext}`,
-      dietaryFilters,
-      targetServings
-    );
-
-    // Insert into database
-    const newRecipe: InsertRecipe = {
-      title: recipeData.title,
-      description: recipeData.description,
-      imageUrl: recipeData.imageUrl,
-      ingredients: recipeData.ingredients,
-      instructions: recipeData.instructions,
-      cookingTime: recipeData.cookingTime,
-      servings: recipeData.servings,
-      dietaryTags: recipeData.dietaryTags,
-      nutritionInfo: recipeData.nutritionInfo,
-      userId: userId,
-      isAIGenerated: true,
-      isVerified: true, // Auto-verify AI-generated recipes
-      rating: 0,
-      ratingCount: 0
-    };
-
-    const recipe = await storage.createRecipe(newRecipe);
-
-    // Generate embedding for the recipe for future RAG usage
-    try {
-      const recipeText = `Title: ${recipe.title}
-Description: ${recipe.description}
-Ingredients: ${JSON.stringify(recipe.ingredients)}
-Instructions: ${JSON.stringify(recipe.instructions)}
-Tags: ${recipe.dietaryTags.join(", ")}`;
-
-      const embedding = await generateEmbedding(recipeText);
-      await storage.createRecipeEmbedding({
-        recipeId: recipe.id,
-        embedding: embedding,
-        content: recipeText
-      });
-    } catch (error) {
-      console.error("Error generating embedding:", error);
-      // Continue without storing embedding
-    }
-
-    return Response.json(recipe);
-  } catch (error) {
-    console.error("Error generating recipe:", error);
-    return Response.json({ error: "Failed to generate recipe" }, { status: 500 });
-  }
+  return Response.json({ jobId: job.id, status: "pending" }, { status: 202 });
 }
