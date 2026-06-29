@@ -4,8 +4,6 @@ import { RecipeCreator } from '@/components/recipes/recipe-creator'
 import { mockSession } from '@/test/utils'
 
 describe('RecipeCreator Component', () => {
-  const mockOnRecipeGenerated = vi.fn()
-
   beforeAll(() => {
     // Radix/jsdom stubs
     window.ResizeObserver = window.ResizeObserver || class { observe() {} unobserve() {} disconnect() {} }
@@ -22,7 +20,7 @@ describe('RecipeCreator Component', () => {
   })
 
   it('renders the Create a recipe card when authenticated', () => {
-    render(<RecipeCreator onRecipeGenerated={mockOnRecipeGenerated} />, { session: mockSession })
+    render(<RecipeCreator />, { session: mockSession })
 
     expect(screen.getByText('Create a recipe')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /generate recipe \(guided\)/i })).toBeInTheDocument()
@@ -34,7 +32,7 @@ describe('RecipeCreator Component', () => {
       status: 'unauthenticated',
     })
 
-    render(<RecipeCreator onRecipeGenerated={mockOnRecipeGenerated} />)
+    render(<RecipeCreator />)
 
     expect(screen.getByText('Create a recipe')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
