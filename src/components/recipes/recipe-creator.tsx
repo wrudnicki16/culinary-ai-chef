@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Recipe } from "@/lib/types";
-import { AILoadingModal } from "./ai-loading-modal";
 import { GuidedRecipeModal } from "./guided-recipe-modal";
 import { CustomRecipePrompt } from "./custom-recipe-prompt";
 
@@ -108,8 +107,6 @@ export function RecipeCreator({ onRecipeGenerated }: RecipeCreatorProps) {
       </Card>
 
       <GuidedRecipeModal open={showGuided} onClose={() => setShowGuided(false)} onGenerate={generate} />
-
-      <AILoadingModal isOpen={isGenerating} progress={generationProgress} onCancel={handleCancelGeneration} />
     </>
   );
 }
