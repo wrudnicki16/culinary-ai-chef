@@ -5,6 +5,8 @@ import { SessionProvider } from 'next-auth/react'
 import type { Session } from 'next-auth'
 import { ThemeProvider } from '@/components/theme-provider'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { RecipeViewerProvider } from '@/components/recipes/recipe-viewer-provider'
+import { GenerationProvider } from '@/components/generation/generation-provider'
 import { vi } from 'vitest'
 
 // Create a test query client
@@ -51,7 +53,11 @@ export function AllProviders({
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="light" storageKey="ui-theme">
           <TooltipProvider>
-            {children}
+            <RecipeViewerProvider>
+              <GenerationProvider>
+                {children}
+              </GenerationProvider>
+            </RecipeViewerProvider>
           </TooltipProvider>
         </ThemeProvider>
       </QueryClientProvider>
