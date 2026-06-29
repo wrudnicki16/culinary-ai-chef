@@ -96,12 +96,17 @@ export function GenerationProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const res = await fetch(`/api/recipes/generations/active`, { credentials: "include" });
-      if (!res.ok || cancelled) return;
-      const data = (await res.json()) as { jobs: Array<Omit<ClientJob, "modalDismissed">> };
-      const first = data.jobs[0];
-      if (first && !jobRef.current) {
-        setJobState({ ...first, modalDismissed: true });
+      // Reconnect is best-effort: a failed/absent response must never crash the app.
+      try {
+        const res = await fetch(`/api/recipes/generations/active`, { credentials: "include" });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { jobs?: Array<Omit<ClientJob, "modalDismissed">> };
+        const first = data.jobs?.[0];
+        if (first && !jobRef.current) {
+          setJobState({ ...first, modalDismissed: true });
+        }
+      } catch {
+        // ignore — no in-flight job to resume
       }
     })();
     return () => { cancelled = true; };
