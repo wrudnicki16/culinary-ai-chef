@@ -1,58 +1,76 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { CheckCircle, Loader2, Circle, AlertTriangle } from "lucide-react";
+import { useGeneration } from "@/components/generation/generation-provider";
+import { DISPLAY_STAGES, stageLabel, stageIndex, type GenerationStage } from "@/lib/generation/stages";
 
-interface AILoadingModalProps {
-  isOpen: boolean;
-  progress: number;
-  onCancel?: () => void;
-}
+export function AILoadingModal() {
+  const { job, dismissModal, cancel } = useGeneration();
+  const open = !!job && !job.modalDismissed;
+  const isError = job?.status === "error";
 
-export function AILoadingModal({ isOpen, progress, onCancel }: AILoadingModalProps) {
-  // Calculate which stage we're in based on progress
-  const getStageMessage = () => {
-    if (progress < 30) return "Analyzing ingredients";
-    if (progress < 60) return "Creating recipe";
-    if (progress < 90) return "Validating nutrition";
-    return "Finalizing recipe";
-  };
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    setSlow(false);
+    if (!open || isError) return;
+    const t = setTimeout(() => setSlow(true), 20_000);
+    return () => clearTimeout(t);
+  }, [open, isError, job?.stage]);
+
+  if (!job) return null;
+
+  const currentIndex = stageIndex(job.stage as GenerationStage);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open && onCancel) {
-        onCancel();
-      }
-    }}>
-      <DialogContent className="bg-white p-8 rounded-xl shadow-xl max-w-md w-full text-center" onInteractOutside={(e) => e.preventDefault()}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) dismissModal(); }}>
+      <DialogContent className="bg-white p-8 rounded-xl shadow-xl max-w-md w-full" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader className="sr-only">
           <DialogTitle>Generating your recipe</DialogTitle>
-          <DialogDescription>Progress status while the AI prepares your custom recipe.</DialogDescription>
+          <DialogDescription>Live progress while the AI prepares your custom recipe.</DialogDescription>
         </DialogHeader>
-        <div className="loader"></div>
-        <h3 className="text-xl font-heading font-semibold mb-2">Generating Your Recipe</h3>
-        <p className="text-gray-600 mb-4">
-          Our AI is finding the perfect recipe based on your preferences...
-        </p>
-        <div className="space-y-2">
-          <Progress value={progress} className="h-2" />
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>Analyzing ingredients</span>
-            <span>Validating nutrition</span>
-            <span>Finalizing</span>
+
+        {isError ? (
+          <div className="text-center">
+            <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-3" />
+            <h3 className="text-xl font-heading font-semibold mb-2">Couldn't finish your recipe</h3>
+            <p className="text-gray-600 mb-4">{job.error ?? "Something went wrong."}</p>
+            <div className="flex justify-center gap-2">
+              <Button variant="outline" onClick={dismissModal}>Close</Button>
+            </div>
           </div>
-          <p className="text-sm font-medium text-primary pt-2">{getStageMessage()}</p>
-        </div>
-        {onCancel && (
-          <div className="mt-6">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onCancel}
-              className="text-gray-600 hover:text-gray-800"
-            >
-              Cancel Generation
-            </Button>
-          </div>
+        ) : (
+          <>
+            <h3 className="text-xl font-heading font-semibold mb-1 text-center">Generating Your Recipe</h3>
+            <p className="text-gray-600 mb-5 text-center">Our AI is cooking up something based on your preferences…</p>
+
+            <ul className="space-y-3">
+              {DISPLAY_STAGES.map((s) => {
+                const idx = stageIndex(s);
+                const done = idx < currentIndex;
+                const active = idx === currentIndex;
+                return (
+                  <li key={s} className="flex items-center gap-3">
+                    {done ? <CheckCircle className="h-5 w-5 text-primary" />
+                      : active ? <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                      : <Circle className="h-5 w-5 text-gray-300" />}
+                    <span className={done ? "text-gray-500" : active ? "font-medium" : "text-gray-400"}>
+                      {stageLabel(s)}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {slow && <p className="text-sm text-gray-500 pt-4 text-center">Taking a little longer than usual…</p>}
+
+            <div className="mt-6 flex justify-center gap-2">
+              <Button variant="default" onClick={dismissModal}>Continue browsing</Button>
+              <Button variant="ghost" size="sm" className="text-gray-500" onClick={() => void cancel()}>Cancel</Button>
+            </div>
+          </>
         )}
       </DialogContent>
     </Dialog>
