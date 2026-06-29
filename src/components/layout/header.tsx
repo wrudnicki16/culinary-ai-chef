@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { Heart, ChevronDown, Utensils } from "lucide-react";
+import { CookingChip } from "@/components/generation/cooking-chip";
 
 export function Header() {
   const { user, isAuthenticated } = useAuth();
@@ -37,6 +38,7 @@ export function Header() {
           <div className="flex items-center space-x-4">
             {isAuthenticated && (
               <>
+                <CookingChip />
                 <Button asChild variant="ghost" size="icon" className="hidden md:flex hover:text-primary">
                   <Link href="/dashboard" aria-label="Saved recipes">
                     <Heart className="h-5 w-5" />
