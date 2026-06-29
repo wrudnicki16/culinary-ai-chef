@@ -7,6 +7,8 @@ import { ThemeProvider } from "./theme-provider"
 import { TooltipProvider } from "./ui/tooltip"
 import { Toaster } from "./ui/toaster"
 import { getQueryFn } from "@/lib/queryClient"
+import { RecipeViewerProvider } from "@/components/recipes/recipe-viewer-provider"
+import { GenerationProvider } from "@/components/generation/generation-provider"
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -30,7 +32,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="light" storageKey="ui-theme">
           <TooltipProvider>
-            {children}
+            <RecipeViewerProvider>
+              <GenerationProvider>
+                {children}
+              </GenerationProvider>
+            </RecipeViewerProvider>
             <Toaster />
           </TooltipProvider>
         </ThemeProvider>
