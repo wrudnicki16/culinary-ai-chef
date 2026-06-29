@@ -5,69 +5,18 @@ import { useSession } from "next-auth/react";
 import { Sparkles, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { isUnauthorizedError } from "@/lib/authUtils";
-import { Recipe } from "@/lib/types";
 import { GuidedRecipeModal } from "./guided-recipe-modal";
 import { CustomRecipePrompt } from "./custom-recipe-prompt";
+import { useGeneration } from "@/components/generation/generation-provider";
 
-interface RecipeCreatorProps {
-  onRecipeGenerated: (recipe: Recipe) => void;
-}
-
-export function RecipeCreator({ onRecipeGenerated }: RecipeCreatorProps) {
+export function RecipeCreator() {
   const { status } = useSession();
-  const { toast } = useToast();
+  const { start, isGenerating } = useGeneration();
   const [showGuided, setShowGuided] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generationProgress, setGenerationProgress] = useState(0);
-  const [isCancelled, setIsCancelled] = useState(false);
 
-  const generate = async (prompt: string, dietaryFilters: string[]) => {
+  const generate = (prompt: string, dietaryFilters: string[]) => {
     setShowGuided(false);
-    setIsCancelled(false);
-    setIsGenerating(true);
-    setGenerationProgress(0);
-    const progressInterval = setInterval(() => {
-      setGenerationProgress((prev) => {
-        const next = prev + Math.random() * 15;
-        return next > 95 ? 95 : next;
-      });
-    }, 800);
-    try {
-      const response = await apiRequest("POST", "/api/recipes/generate", { prompt, dietaryFilters });
-      if (isCancelled) { clearInterval(progressInterval); return; }
-      if (!response.ok) throw new Error("Failed to generate recipe");
-      const recipe = await response.json();
-      if (isCancelled) { clearInterval(progressInterval); return; }
-      setGenerationProgress(100);
-      setTimeout(() => {
-        if (!isCancelled) {
-          setIsGenerating(false);
-          clearInterval(progressInterval);
-          queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
-          onRecipeGenerated(recipe);
-        }
-      }, 500);
-    } catch (error: unknown) {
-      clearInterval(progressInterval);
-      if (isCancelled) return;
-      setIsGenerating(false);
-      if (isUnauthorizedError(error)) {
-        toast({ title: "Authentication required", description: "Redirecting to login…", variant: "destructive" });
-        setTimeout(() => { window.location.href = "/api/auth/signin"; }, 1500);
-        return;
-      }
-      toast({ title: "Recipe generation failed", description: "Please try again.", variant: "destructive" });
-    }
-  };
-
-  const handleCancelGeneration = () => {
-    setIsCancelled(true);
-    setIsGenerating(false);
-    setGenerationProgress(0);
-    toast({ title: "Recipe generation cancelled", variant: "default" });
+    void start(prompt, dietaryFilters);
   };
 
   if (status === "unauthenticated") {
@@ -95,9 +44,10 @@ export function RecipeCreator({ onRecipeGenerated }: RecipeCreatorProps) {
           <div className="text-center border border-dashed border-gray-200 rounded-lg p-5">
             <p className="font-medium">Generate your recipe</p>
             <p className="text-sm text-gray-500 mb-3">Guided — pick diet, cuisine, allergies, or hit Surprise me.</p>
-            <Button className="bg-primary hover:bg-primary/90 text-white" onClick={() => setShowGuided(true)}>
+            <Button className="bg-primary hover:bg-primary/90 text-white" disabled={isGenerating} onClick={() => setShowGuided(true)}>
               <Sparkles className="h-4 w-4 mr-2" /> Generate recipe (guided)
             </Button>
+            {isGenerating && <p className="text-xs text-gray-400 mt-2">A recipe's already cooking…</p>}
           </div>
 
           <div className="text-center text-xs font-medium text-gray-400">— OR —</div>

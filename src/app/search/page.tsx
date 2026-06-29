@@ -1,33 +1,23 @@
 "use client"
 
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { RecipeDetailModal } from "@/components/recipes/recipe-detail-modal";
 import { RecipeBrowser, RecipeBrowserParams } from "@/components/recipes/recipe-browser";
-import { Recipe } from "@/lib/types";
+import { useRecipeViewer } from "@/components/recipes/recipe-viewer-provider";
 
 function SearchPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { openRecipe } = useRecipeViewer();
 
   const params: RecipeBrowserParams = {
     search: searchParams.get("q") ?? "",
     filters: (searchParams.get("filters") ?? "").split(",").filter(Boolean),
     sort: searchParams.get("sort") || "popular",
-  };
-
-  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [pendingRating, setPendingRating] = useState<number | undefined>(undefined);
-
-  const rateRecipe = (recipe: Recipe, rating: number) => {
-    setSelectedRecipe(recipe);
-    setPendingRating(rating);
-    setIsModalOpen(true);
   };
 
   const writeParams = (next: RecipeBrowserParams) => {
@@ -48,11 +38,10 @@ function SearchPageContent() {
       <RecipeBrowser
         params={params}
         onParamsChange={writeParams}
-        onRecipeClick={(r) => { setSelectedRecipe(r); setPendingRating(undefined); setIsModalOpen(true); }}
-        onRecipeRate={rateRecipe}
+        onRecipeClick={(r) => openRecipe(r)}
+        onRecipeRate={(r, rating) => openRecipe(r, rating)}
         showSearch
       />
-      <RecipeDetailModal recipe={selectedRecipe} open={isModalOpen} initialRating={pendingRating} onClose={() => { setIsModalOpen(false); setPendingRating(undefined); }} />
     </>
   );
 }
