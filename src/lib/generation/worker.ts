@@ -95,7 +95,11 @@ export async function processGenerationJob(jobId: number, deps: WorkerDeps = def
 
     // Best-effort embedding for RAG (never affects job outcome).
     try {
-      const recipeText = `Title: ${recipe.id}`;
+      const recipeText = `Title: ${recipeData.title}
+Description: ${recipeData.description}
+Ingredients: ${JSON.stringify(recipeData.ingredients)}
+Instructions: ${JSON.stringify(recipeData.instructions)}
+Tags: ${recipeData.dietaryTags.join(", ")}`;
       const embedding = await deps.generateEmbedding(recipeText);
       await deps.createRecipeEmbedding({ recipeId: recipe.id, embedding, content: recipeText });
     } catch {
