@@ -54,4 +54,14 @@ describe('processGenerationJob', () => {
     await processGenerationJob(1, deps);
     expect(deps.createRecipe).not.toHaveBeenCalled();
   });
+
+  it('bails immediately if the job is already cancelled before processing starts', async () => {
+    const { deps, updates } = makeDeps({
+      getJob: vi.fn(async () => ({ status: 'cancelled', prompt: 'p', dietaryFilters: [], userId: 'u1' })),
+    });
+    await processGenerationJob(1, deps);
+    expect(updates).toEqual([]);
+    expect(deps.generateRecipe).not.toHaveBeenCalled();
+    expect(deps.createRecipe).not.toHaveBeenCalled();
+  });
 });

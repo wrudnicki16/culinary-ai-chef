@@ -53,6 +53,8 @@ export const defaultWorkerDeps: WorkerDeps = {
 export async function processGenerationJob(jobId: number, deps: WorkerDeps = defaultWorkerDeps): Promise<void> {
   const job = await deps.getJob(jobId);
   if (!job) return;
+  // Cancelled during the pending window (before after() ran) — don't start generating.
+  if (job.status === 'cancelled') return;
 
   try {
     await deps.updateJob(jobId, { status: 'processing', stage: 'recipe' });
