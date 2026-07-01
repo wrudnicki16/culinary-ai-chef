@@ -47,7 +47,7 @@ export function RecipeCreator() {
             <Button className="bg-primary hover:bg-primary/90 text-white" disabled={isGenerating} onClick={() => setShowGuided(true)}>
               <Sparkles className="h-4 w-4 mr-2" /> Generate recipe (guided)
             </Button>
-            {isGenerating && <p className="text-xs text-gray-400 mt-2">A recipe's already cooking…</p>}
+            {isGenerating && <p className="text-xs text-gray-400 mt-2">A recipe&apos;s already cooking…</p>}
           </div>
 
           <div className="text-center text-xs font-medium text-gray-400">— OR —</div>

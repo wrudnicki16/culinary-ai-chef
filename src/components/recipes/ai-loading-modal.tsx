@@ -35,7 +35,7 @@ export function AILoadingModal() {
         {isError ? (
           <div className="text-center">
             <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-3" />
-            <h3 className="text-xl font-heading font-semibold mb-2">Couldn't finish your recipe</h3>
+            <h3 className="text-xl font-heading font-semibold mb-2">Couldn&apos;t finish your recipe</h3>
             <p className="text-gray-600 mb-4">{job.error ?? "Something went wrong."}</p>
             <div className="flex justify-center gap-2">
               <Button variant="outline" onClick={dismissModal}>Close</Button>
