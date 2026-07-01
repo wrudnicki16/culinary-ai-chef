@@ -833,6 +833,8 @@ RESPONSE FORMAT: Return a complete JSON object with ALL required fields:
       imageUrl
     };
   } catch (error) {
+    // A cancellation must propagate — never get swallowed by the Together AI fallback.
+    if (error instanceof GenerationCancelledError) throw error;
     if (isUsingTogetherAI) {
       console.warn(`Together AI failed, falling back to GPT-4o:`, error instanceof Error ? error.message : String(error));
       try {
