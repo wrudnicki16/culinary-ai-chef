@@ -1,8 +1,7 @@
 import type { GenerationStage } from './stages';
 import type { InsertRecipe } from '@/lib/schema';
 import type { generateRecipe as GenerateRecipeFn } from '@/lib/openai';
-
-export class GenerationCancelledError extends Error {}
+import { GenerationCancelledError } from './errors';
 
 type RecipeData = Awaited<ReturnType<typeof GenerateRecipeFn>>;
 
