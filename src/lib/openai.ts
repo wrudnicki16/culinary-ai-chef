@@ -4,6 +4,7 @@ import { analyzeNutritionWithEdamam } from "./edamam";
 import { scaleRecipePortions } from "./portion-scaling";
 import { mergeDietaryTags } from "./dietary-tags";
 import type { GenerationStage } from "@/lib/generation/stages";
+import { GenerationCancelledError } from "@/lib/generation/errors";
 
 // Configure OpenAI models from environment variables
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-2024-11-20";
