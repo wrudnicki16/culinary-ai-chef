@@ -9,8 +9,9 @@ import {
   GenerationJob, InsertGenerationJob
 } from "./schema";
 import { db } from "./db";
-import { eq, and, or, ilike, desc, asc, sql, isNotNull, inArray, lt } from "drizzle-orm";
+import { eq, and, or, ilike, desc, asc, sql, isNotNull, inArray, lt, type SQL } from "drizzle-orm";
 import { computeRatingAggregate } from "@/lib/rating-aggregate";
+import { STALE_GENERATION_TTL_MS } from "@/lib/generation/reaper";
 import {
   users, recipes, comments, favorites,
   groceryItems, chatMessages, recipeEmbeddings, generationJobs
@@ -64,7 +65,7 @@ export interface IStorage {
   getGenerationJob(id: number): Promise<GenerationJob | undefined>;
   getActiveGenerationJobs(userId: string): Promise<GenerationJob[]>;
   updateGenerationJob(id: number, patch: Partial<Pick<GenerationJob, 'status' | 'stage' | 'recipeId' | 'error' | 'attempt'>>): Promise<GenerationJob | undefined>;
-  failStaleGenerationJobs(ttlMs: number): Promise<number>;
+  failStaleGenerationJobs(): Promise<number>;
 
   // Admin operations
   getAdminStats(): Promise<{
@@ -407,11 +408,13 @@ export class Storage implements IStorage {
   }
 
   async getGenerationJob(id: number): Promise<GenerationJob | undefined> {
+    await this.reapStaleGenerationJobs(eq(generationJobs.id, id));
     const result = await db.select().from(generationJobs).where(eq(generationJobs.id, id));
     return result[0];
   }
 
   async getActiveGenerationJobs(userId: string): Promise<GenerationJob[]> {
+    await this.reapStaleGenerationJobs(eq(generationJobs.userId, userId));
     return await db.select().from(generationJobs)
       .where(and(
         eq(generationJobs.userId, userId),
@@ -431,16 +434,21 @@ export class Storage implements IStorage {
     return result[0];
   }
 
-  async failStaleGenerationJobs(ttlMs: number): Promise<number> {
-    const cutoff = new Date(Date.now() - ttlMs);
+  private async reapStaleGenerationJobs(scope?: SQL): Promise<number> {
+    const cutoff = new Date(Date.now() - STALE_GENERATION_TTL_MS);
+    const conditions = [
+      inArray(generationJobs.status, ['pending', 'processing']),
+      lt(generationJobs.updatedAt, cutoff),
+    ];
     const result = await db.update(generationJobs)
       .set({ status: 'error', error: 'timed out', updatedAt: new Date() })
-      .where(and(
-        inArray(generationJobs.status, ['pending', 'processing']),
-        lt(generationJobs.updatedAt, cutoff),
-      ))
+      .where(scope ? and(scope, ...conditions) : and(...conditions))
       .returning();
     return result.length;
+  }
+
+  async failStaleGenerationJobs(): Promise<number> {
+    return this.reapStaleGenerationJobs();
   }
 
   async getAdminStats(): Promise<{

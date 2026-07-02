@@ -1,5 +1,5 @@
 {
   "crons": [
-    { "path": "/api/cron/reap-generations", "schedule": "*/5 * * * *" }
+    { "path": "/api/cron/reap-generations", "schedule": "0 0 * * *" }
   ]
 }
