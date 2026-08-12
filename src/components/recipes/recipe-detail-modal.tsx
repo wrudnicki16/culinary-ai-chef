@@ -269,7 +269,7 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
                             onMouseEnter={() => setTopHover(star)}
                             onClick={() => gate(() => startReview(star))}
                             className={cn(
-                              "flex-shrink-0 overflow-hidden transition-all duration-200",
+                              "flex-shrink-0 overflow-hidden transition-all duration-200 hover:scale-[1.15]",
                               !isAnchor &&
                                 "w-0 opacity-0 group-hover:w-4 group-hover:opacity-100"
                             )}

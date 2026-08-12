@@ -50,7 +50,10 @@ export function Rating({
           return (
             <span
               key={star}
-              className={cn("relative inline-flex", !readOnly && "cursor-pointer")}
+              className={cn(
+                "relative inline-flex",
+                !readOnly && "cursor-pointer transition-transform hover:scale-[1.15]"
+              )}
               role={!readOnly ? "button" : undefined}
               aria-label={!readOnly ? `Rate ${star} star${star > 1 ? "s" : ""}` : undefined}
               onMouseEnter={() => !readOnly && setHoverValue(star)}
