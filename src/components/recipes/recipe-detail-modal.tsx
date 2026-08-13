@@ -50,6 +50,7 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
   const queryClient = useQueryClient();
   const reviewSectionRef = useRef<HTMLDivElement>(null);
   const [topHover, setTopHover] = useState<number | null>(null);
+  const [topOpen, setTopOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
   // Full recipe detail (comments + this user's favorite status) fetched while the
@@ -164,8 +165,10 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
 
       if (response.ok) {
         toast({
-          title: "Comment submitted",
-          description: "Your review has been added successfully",
+          title: alreadyReviewed ? "Review updated" : "Comment submitted",
+          description: alreadyReviewed
+            ? "Your new rating replaces your previous review"
+            : "Your review has been added successfully",
         });
 
         setComment("");
@@ -254,18 +257,24 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
                       star we always see — transparent, with no gap to cross. */}
                   <span className="relative inline-block h-4 w-4 mr-1">
                     <span
+                      data-testid="top-star-picker"
                       className="group absolute right-0 top-1/2 -translate-y-1/2 flex items-center rounded-md border border-transparent p-1.5 transition-colors hover:border-white/40"
-                      onMouseLeave={() => setTopHover(null)}
+                      onMouseEnter={() => setTopOpen(true)}
+                      onMouseLeave={() => {
+                        setTopOpen(false);
+                        setTopHover(null);
+                      }}
                     >
                       {[1, 2, 3, 4, 5].map((star) => {
-                        const filled = star <= (topHover ?? 0);
+                        const filled = topOpen
+                          ? star <= (topHover ?? Math.round(view.rating))
+                          : view.rating > 0;
                         const isAnchor = star === 5;
                         return (
                           <button
                             key={star}
                             type="button"
                             aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
-                            disabled={alreadyReviewed}
                             onMouseEnter={() => setTopHover(star)}
                             onClick={() => gate(() => startReview(star))}
                             className={cn(
@@ -400,26 +409,25 @@ export function RecipeDetailModal({ recipe, open, onClose, initialRating }: Reci
               <div className="flex items-center mb-3">
                 <Rating
                   value={view.rating}
-                  readOnly={alreadyReviewed}
+                  readOnly={false}
                   onChange={(r) => gate(() => startReview(r))}
                 />
-                {alreadyReviewed ? (
+                {alreadyReviewed && (
                   <span className="ml-4 flex items-center text-sm text-gray-500">
                     <CheckCircle className="mr-1 h-4 w-4 text-green-600" />
                     You&rsquo;ve reviewed this recipe
                   </span>
-                ) : (
-                  <Button
-                    variant="link"
-                    className="ml-4 text-sm text-primary font-medium"
-                    onClick={() => gate(() => setShowCommentForm((s) => !s))}
-                  >
-                    Write a Review
-                  </Button>
                 )}
+                <Button
+                  variant="link"
+                  className="ml-4 text-sm text-primary font-medium"
+                  onClick={() => gate(() => setShowCommentForm((s) => !s))}
+                >
+                  {alreadyReviewed ? "Update Your Review" : "Write a Review"}
+                </Button>
               </div>
 
-              {showCommentForm && !alreadyReviewed && (
+              {showCommentForm && (
                 <div className="bg-muted p-4 rounded-lg mb-4">
                   <div className="mb-3">
                     <label className="block text-sm font-medium mb-1">Your Rating</label>

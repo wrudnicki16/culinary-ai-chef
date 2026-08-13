@@ -1,6 +1,6 @@
-import { render, screen, userEvent } from "@/test/utils";
+import { render, screen, userEvent, fireEvent } from "@/test/utils";
 import { useSession } from "next-auth/react";
-import { mockSession, mockRecipe } from "@/test/utils";
+import { mockSession, mockRecipe, mockUser } from "@/test/utils";
 import { RecipeDetailModal } from "@/components/recipes/recipe-detail-modal";
 import type { Recipe } from "@/lib/types";
 
@@ -37,6 +37,36 @@ describe("RecipeDetailModal ratings", () => {
     render(<RecipeDetailModal recipe={mockRecipe} open onClose={() => {}} />);
     await user.click(screen.getAllByRole("button", { name: "Rate 5 stars" })[0]);
     expect(screen.queryByText("Your Review")).not.toBeInTheDocument();
+  });
+
+  it("top picker rests on the rounded aggregate, previews the hovered star", () => {
+    vi.mocked(useSession).mockReturnValue({ data: mockSession, status: "authenticated" } as never);
+    render(<RecipeDetailModal recipe={mockRecipe} open onClose={() => {}} />);
+    const picker = screen.getByTestId("top-star-picker");
+    fireEvent.mouseEnter(picker);
+    expect(picker.querySelectorAll(".fill-yellow-400")).toHaveLength(mockRecipe.rating);
+    fireEvent.mouseEnter(screen.getAllByRole("button", { name: "Rate 2 stars" })[0]);
+    expect(picker.querySelectorAll(".fill-yellow-400")).toHaveLength(2);
+  });
+
+  it("lets a user who already reviewed start an updated review", async () => {
+    vi.mocked(useSession).mockReturnValue({ data: mockSession, status: "authenticated" } as never);
+    const user = userEvent.setup();
+    const reviewed = {
+      ...mockRecipe,
+      comments: [
+        {
+          id: 1,
+          content: "Great!",
+          rating: 5,
+          user: { id: mockUser.id, firstName: "Test", lastName: "User", profileImageUrl: null },
+        },
+      ],
+    };
+    render(<RecipeDetailModal recipe={reviewed as never} open onClose={() => {}} />);
+    expect(screen.getByText("Update Your Review")).toBeInTheDocument();
+    await user.click(screen.getAllByRole("button", { name: "Rate 4 stars" })[0]);
+    expect(screen.getByText("Your Review")).toBeInTheDocument();
   });
 });
 
